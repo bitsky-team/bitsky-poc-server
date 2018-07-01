@@ -1,0 +1,28 @@
+{
+    "name": "jasonvanmalder/restphp",
+    "description": "Setting up an REST API was never so easy",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jason Van Malder",
+            "email": "jasonvanmalder@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": "^7.1.3",
+        "vlucas/phpdotenv": "^2.5@dev",
+        "illuminate/database": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Kernel\\": "kernel/",
+            "Controller\\": "app/controller/",
+            "Model\\": "app/model/"
+        }
+    }
+}

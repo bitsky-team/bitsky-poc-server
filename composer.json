@@ -1,6 +1,6 @@
 {
-    "name": "jasonvanmalder/restphp",
-    "description": "Setting up an REST API was never so easy",
+    "name": "bitsky",
+    "description": "TFE",
     "type": "project",
     "license": "MIT",
     "authors": [

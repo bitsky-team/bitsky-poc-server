@@ -1,7 +1,5 @@
 <?php
-
     namespace Kernel;
-
     /**
      * RestPHP's Router
      * 
@@ -36,7 +34,6 @@
         
             return self::$_instance;
         }
-
         /**
          * Method who read the routes and
          * call the controller method associated with
@@ -49,18 +46,27 @@
         {
             $routes = require_once(__DIR__ . '/../config/routes.php');
             $request = (isset($_GET['route']) && !empty($_GET['route'])) ? htmlspecialchars($_GET['route']) : 'home';
-
             if(substr($request, -1) == '/') {
                 $request = substr($request, 0, -1);
             }
-
+            
             $request = explode('/', $request);
+            
+            $first = false;
+
             foreach($routes as $route)
             {
                 $parts = explode('/', $route[1]);
                 
-                if($request[0] == $parts[0] && $_SERVER['REQUEST_METHOD'] == $route[0])
-                {                    
+                if(!$first)
+                {
+                    $request[1] = $request[0];
+                    $request[0] = '/';
+                    $first = true;
+                }
+
+                if($request[1] == $parts[1] && $_SERVER['REQUEST_METHOD'] == $route[0])
+                {              
                     if(count($request) == count($parts))
                     {
                         $request = array_values(array_filter($request));
@@ -81,8 +87,6 @@
             
             $request_methods = ['GET', 'POST', 'PUT'];
 
-            if(!in_array($request[0], $request_methods)) $request = ['GET', '404', 'controller', 'notFound'];
-            
             if ($_SERVER['REQUEST_METHOD'] == $request[0]) 
             {
                 $controller = 'Controller\\' . ucfirst($request[2]);

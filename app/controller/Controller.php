@@ -8,7 +8,7 @@
      * @category Controller
      * @author Jason Van Malder <jasonvanmalder@gmail.com>
      */
-    abstract class Controller
+    class Controller
     {
         /**
          * Method returning a 404 error
@@ -25,8 +25,8 @@
          * 
          * @return string
          */
-        public function forbidden()
+        public function forbidden($message = null)
         {
-            return json_encode(['success' => false, 'error' => 403]);
+            return json_encode(['success' => false, 'error' => 403, 'message' => $message]);
         }
     }

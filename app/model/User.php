@@ -8,5 +8,5 @@
     {
         public $timestamps = false;
         protected $table = 'users';
-        protected $fillable = ['uniq_id','email','password','lastname','firstname'];
+        protected $fillable = ['uniq_id','email','password','lastname','firstname', 'token'];
     }

@@ -9,7 +9,7 @@
     {
         public function login()
         {
-            $notEmpty = !empty($_POST['username']) && !empty($_POST['password']);
+            $notEmpty = !empty($_POST['email']) && !empty($_POST['password']);
             
             if($notEmpty)
             {
@@ -18,17 +18,34 @@
                     "password" => htmlspecialchars($_POST['password'])
                 ];
 
-                $data = $received;
-                unset($data['password']);
+                $emailCheck = preg_match('/^(?!(?:(?:\x22?\x5C[\x00-\x7E]\x22?)|(?:\x22?[^\x5C\x22]\x22?)){255,})(?!(?:(?:\x22?\x5C[\x00-\x7E]\x22?)|(?:\x22?[^\x5C\x22]\x22?)){65,}@)(?:(?:[\x21\x23-\x27\x2A\x2B\x2D\x2F-\x39\x3D\x3F\x5E-\x7E]+)|(?:\x22(?:[\x01-\x08\x0B\x0C\x0E-\x1F\x21\x23-\x5B\x5D-\x7F]|(?:\x5C[\x00-\x7F]))*\x22))(?:\.(?:(?:[\x21\x23-\x27\x2A\x2B\x2D\x2F-\x39\x3D\x3F\x5E-\x7E]+)|(?:\x22(?:[\x01-\x08\x0B\x0C\x0E-\x1F\x21\x23-\x5B\x5D-\x7F]|(?:\x5C[\x00-\x7F]))*\x22)))*@(?:(?:(?!.*[^.]{64,})(?:(?:(?:xn--)?[a-z0-9]+(?:-[a-z0-9]+)*\.){1,126}){1,}(?:(?:[a-z][a-z0-9]*)|(?:(?:xn--)[a-z0-9]+))(?:-[a-z0-9]+)*)|(?:\[(?:(?:IPv6:(?:(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){7})|(?:(?!(?:.*[a-f0-9][:\]]){7,})(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,5})?::(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,5})?)))|(?:(?:IPv6:(?:(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){5}:)|(?:(?!(?:.*[a-f0-9]:){5,})(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,3})?::(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,3}:)?)))?(?:(?:25[0-5])|(?:2[0-4][0-9])|(?:1[0-9]{2})|(?:[1-9]?[0-9]))(?:\.(?:(?:25[0-5])|(?:2[0-4][0-9])|(?:1[0-9]{2})|(?:[1-9]?[0-9]))){3}))\]))$/iD', $received['email']);
+                $passwordCheckLength = strlen($received['password']) >= 8;
                 
-                $auth_token = JWT::encode($data);
+                if($emailCheck && $passwordCheckLength)
+                {
+                    if(count(User::where('email', $received['email'])->get()) != 0)
+                    {
+                        $user = User::where('email', $received['email'])->first();
+                        
+                        if(password_verify($received['password'], $user['password']))
+                        {
+                            $token['lastname'] = $user['lastname'];
+                            $token['firstname'] = $user['firstname'];
+                            $token['created_at'] = time();
+                            $token['lifetime'] = 86400;
+                            $token = JWT::encode($token);
+                            $user->update(['token' => $token]);
 
-                return json_encode([
-                    'success' => true, 
-                    'received' => $received, 
-                    'auth_token' => $auth_token,
-                    'translated_token' => JWT::check($auth_token)
-                ]);                
+                            return json_encode(['success' => true, 'message' => $token, 'uniq_id' => $user['uniq_id']]);
+                        }else
+                        {
+                            return $this->forbidden('Mot de passe incorrect !');
+                        }
+                    }else
+                    {
+                        return $this->forbidden('Ce compte n\'existe pas !');
+                    }
+                }
             }else
             {
                 return $this->forbidden('Veuillez remplir tous les champs !');
@@ -63,10 +80,27 @@
                     {
                         if($received['password'] == $received['repeatPassword'])
                         {
+                            $id = $received['uniq_id'];
+                            unset($received['uniq_id']);
                             unset($received['repeatPassword']);
                             $received['password'] = password_hash($received['password'], PASSWORD_BCRYPT);
+                            $received['created_at'] = time();
+                            $received['lifetime'] = 86400;
+
+                            $password = $received['password'];
+                            $email = $received['email'];
+                            unset($received['password']);
+                            unset($received['email']);
+                            $auth_token = JWT::encode($received);
+
+                            $received['password'] = $password;
+                            $received['email'] = $email;
+                            $received['uniq_id'] = $id;
+                            $received['token'] = $auth_token;
+
                             User::create($received);
-                            return json_encode(['success' => true]);
+
+                            return json_encode(['success' => true, 'message' => $auth_token, 'uniq_id' => $id]);
                         }else
                         {
                             return $this->forbidden('Les mots de passe ne sont pas identiques !');
@@ -87,23 +121,46 @@
 
                     return $this->forbidden($message);
                 }
-
-                /*
-
-                $data = $received;
-                unset($data['password']);
-                
-                $auth_token = JWT::encode($data);
-
-                return json_encode([
-                    'success' => true, 
-                    'received' => $received, 
-                    'auth_token' => $auth_token,
-                    'translated_token' => JWT::check($auth_token)
-                ]);*/
             }else
             {
                 return $this->forbidden('Veuillez remplir tous les champs !');
+            }
+        }
+
+        public function verify()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['id']))
+            {
+         
+                $token = htmlspecialchars($_POST['token']);
+                $id = htmlspecialchars($_POST['id']);
+
+                if(count(User::where('token', $token)->get()) != 0)
+                {
+                    $user = User::where('token', $token)->first();
+                    
+                    if($user['uniq_id'] == $id)
+                    {
+                        $message = json_encode(JWT::check(htmlspecialchars($_POST['token'])));
+
+                        if($message != '"invalid"')
+                        {
+                            return json_encode(['success' => true, 'message' => $message]);
+                        }else
+                        {
+                            return $this->forbidden($message);
+                        }
+                    }else
+                    {
+                        return $this->forbidden('invalidID');
+                    }
+                }else
+                {
+                    return $this->forbidden('unknownToken');
+                }
+            }else
+            {
+                return $this->forbidden('noToken');
             }
         }
     }

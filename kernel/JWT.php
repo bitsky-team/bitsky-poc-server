@@ -74,9 +74,6 @@ class JWT
 		$header = array('typ' => 'JWT', 'alg' => $algo);
 		$segments = array();
 		$segments[] = JWT::urlsafeB64Encode(JWT::jsonEncode($header));
-
-		$payload['expiration_date'] = strtotime('+ 1 day');
-
 		$segments[] = JWT::urlsafeB64Encode(JWT::jsonEncode($payload));
 		$signing_input = implode('.', $segments);
 		$signature = JWT::sign($signing_input, $key, $algo);

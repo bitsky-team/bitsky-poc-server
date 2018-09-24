@@ -8,5 +8,20 @@
     {
         public $timestamps = false;
         protected $table = 'users';
-        protected $fillable = ['uniq_id','email','password','lastname','firstname', 'token'];
+        protected $fillable = [
+            'uniq_id',
+            'email',
+            'password',
+            'lastname',
+            'firstname',
+            'token',
+            'firsttime',
+            'biography',
+            'sex',
+            'birthdate',
+            'relationshipstatus',
+            'job',
+            'birthplace',
+            'livingplace'
+        ];
     }

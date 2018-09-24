@@ -70,7 +70,7 @@
                 $emailCheck = preg_match('/^(?!(?:(?:\x22?\x5C[\x00-\x7E]\x22?)|(?:\x22?[^\x5C\x22]\x22?)){255,})(?!(?:(?:\x22?\x5C[\x00-\x7E]\x22?)|(?:\x22?[^\x5C\x22]\x22?)){65,}@)(?:(?:[\x21\x23-\x27\x2A\x2B\x2D\x2F-\x39\x3D\x3F\x5E-\x7E]+)|(?:\x22(?:[\x01-\x08\x0B\x0C\x0E-\x1F\x21\x23-\x5B\x5D-\x7F]|(?:\x5C[\x00-\x7F]))*\x22))(?:\.(?:(?:[\x21\x23-\x27\x2A\x2B\x2D\x2F-\x39\x3D\x3F\x5E-\x7E]+)|(?:\x22(?:[\x01-\x08\x0B\x0C\x0E-\x1F\x21\x23-\x5B\x5D-\x7F]|(?:\x5C[\x00-\x7F]))*\x22)))*@(?:(?:(?!.*[^.]{64,})(?:(?:(?:xn--)?[a-z0-9]+(?:-[a-z0-9]+)*\.){1,126}){1,}(?:(?:[a-z][a-z0-9]*)|(?:(?:xn--)[a-z0-9]+))(?:-[a-z0-9]+)*)|(?:\[(?:(?:IPv6:(?:(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){7})|(?:(?!(?:.*[a-f0-9][:\]]){7,})(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,5})?::(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,5})?)))|(?:(?:IPv6:(?:(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){5}:)|(?:(?!(?:.*[a-f0-9]:){5,})(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,3})?::(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,3}:)?)))?(?:(?:25[0-5])|(?:2[0-4][0-9])|(?:1[0-9]{2})|(?:[1-9]?[0-9]))(?:\.(?:(?:25[0-5])|(?:2[0-4][0-9])|(?:1[0-9]{2})|(?:[1-9]?[0-9]))){3}))\]))$/iD', $received['email']);
                 $passwordCheckLength = strlen($received['password']) >= 8;
                 $repeatPasswordCheckLength = strlen($received['repeatPassword']) >= 8;
-                $passwordCheckEquality = $received['password'] === $received['repeatPassword'];
+                $passwordCheckEquality = $received['password'] == $received['repeatPassword'];
                 $lastnameCheck = strlen($received['lastname']) >= 2;
                 $firstnameCheck = strlen($received['firstname']) >= 2;
 
@@ -127,8 +127,11 @@
             }
         }
 
-        public function verify()
+        public function verify($token = null, $id = null)
         {
+            if($token !== null) $_POST['token'] = $token;
+            if($id !== null) $_POST['id'] = $id;
+
             if(!empty($_POST['token']) && !empty($_POST['id']))
             {
          
@@ -141,14 +144,14 @@
                     
                     if($user['uniq_id'] == $id)
                     {
-                        $message = json_encode(JWT::check(htmlspecialchars($_POST['token'])));
+                        $message = json_encode(JWT::check($token));
 
                         if($message != '"invalid"')
                         {
                             return json_encode(['success' => true, 'message' => $message]);
                         }else
                         {
-                            return $this->forbidden($message);
+                            return $this->forbidden($token);
                         }
                     }else
                     {
@@ -161,6 +164,102 @@
             }else
             {
                 return $this->forbidden('noToken');
+            }
+        }
+
+        public function checkRegisterConfirmation()
+        {
+            $notEmpty = !empty($_POST['uniq_id']) &&
+                        !empty($_POST['token']) && 
+                        !empty($_POST['biography']) && 
+                        !empty($_POST['sex']) && 
+                        !empty($_POST['birthdate']) && 
+                        !empty($_POST['relationshipstatus']) && 
+                        !empty($_POST['job']) && 
+                        !empty($_POST['birthplace']) && 
+                        !empty($_POST['livingplace']);
+            
+            if($notEmpty)
+            {
+                $received = [
+                    "uniq_id"             =>  htmlspecialchars($_POST['uniq_id']), 
+                    "token"               =>  htmlspecialchars($_POST['token']),  
+                    "biography"           =>  htmlspecialchars($_POST['biography']),
+                    "sex"                 =>  htmlspecialchars($_POST['sex']),
+                    "birthdate"           =>  htmlspecialchars($_POST['birthdate']),
+                    "relationshipstatus"  =>  htmlspecialchars($_POST['relationshipstatus']),
+                    "job"                 =>  htmlspecialchars($_POST['job']),
+                    "birthplace"          =>  htmlspecialchars($_POST['birthplace']),
+                    "livingplace"         =>  htmlspecialchars($_POST['livingplace'])
+                ];
+
+                $verify = json_decode($this->verify($received['token'], $received['uniq_id']));
+
+                if($verify->success)
+                {
+                    $biographyCheckLength = strlen($received['biography']) >= 10;
+                    $sexChoosenCheck = $received['sex'] == 'Homme' || $received['sex'] == 'Femme' || $received['sex'] == 'Autre';
+                    $jobCheckLength = strlen($received['job']) >= 3;
+                    $birthdateCheck = strlen($received['birthdate']) == 10;
+                    $birthplaceCheckLength = strlen($received['birthplace']) >= 3;
+                    $RelationshipstatusCheck = $received['relationshipstatus'] == 'Célibataire' || $received['relationshipstatus'] == 'En couple' || $received['relationshipstatus'] == 'Marié(e)' || $received['relationshipstatus'] == 'Veuf(ve)' || $received['relationshipstatus'] == 'Non précisé';
+                    $livingPlaceCheckLength = strlen($received['livingplace']) >= 3;
+
+                    if($biographyCheckLength && $sexChoosenCheck && $jobCheckLength && $birthdateCheck && $birthplaceCheckLength && $RelationshipstatusCheck && $livingPlaceCheckLength)
+                    {
+                        User::where('uniq_id', $received['uniq_id'])
+                            ->update([
+                                "firsttime"           =>  0,  
+                                "biography"           =>  $received['biography'],
+                                "sex"                 =>  $received['sex'],
+                                "birthdate"           =>  $received['birthdate'],
+                                "relationshipstatus"  =>  $received['relationshipstatus'],
+                                "job"                 =>  $received['job'],
+                                "birthplace"          =>  $received['birthplace'],
+                                "livingplace"         =>  $received['livingplace']
+                            ]);
+
+                        return json_encode(['success' => true]);
+
+                    }else
+                    {
+                        $message = '';
+                        if(!$biographyCheckLength) $message .= 'biographyCheckLength,';
+                        if(!$sexChoosenCheck) $message .= 'sexChoosenCheck,';
+                        if(!$jobCheckLength) $message .= 'jobCheckLength,';
+                        if(!$birthdateCheck) $message .= 'birthdateCheck,';
+                        if(!$birthplaceCheckLength) $message .= 'birthplaceCheckLength,';
+                        if(!$RelationshipstatusCheck) $message .= 'RelationshipstatusCheck,';
+                        if(!$livingPlaceCheckLength) $message .= 'livingPlaceCheckLength,';
+                        return $this->forbidden('Veuillez remplir les champs correctement !'.$message);
+                    }
+                }
+            }else
+            {
+                return $this->forbidden('Veuillez remplir tous les champs !');
+            }
+        }
+
+        public function getFirstTime()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $id = htmlspecialchars($_POST['uniq_id']);
+
+                $verify = json_decode($this->verify($token, $id));
+                
+                if($verify->success)
+                {
+                    $user = User::where('uniq_id', $id)->first();
+                    return json_encode(['success' => true, 'message' => $user['firsttime']]);
+                }else
+                {
+                    return $this->forbidden('wrongToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
             }
         }
     }

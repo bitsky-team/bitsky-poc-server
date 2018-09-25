@@ -6,7 +6,7 @@
 
     class User extends Model
     {
-        public $timestamps = false;
+        public $timestamps = true;
         protected $table = 'users';
         protected $fillable = [
             'uniq_id',

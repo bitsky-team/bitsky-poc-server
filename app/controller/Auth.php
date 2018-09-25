@@ -4,6 +4,7 @@
     
     use \Kernel\JWT;
     use \Model\User;
+    use \Controller\Log;
 
     class Auth extends Controller
     {
@@ -134,7 +135,6 @@
 
             if(!empty($_POST['token']) && !empty($_POST['id']))
             {
-         
                 $token = htmlspecialchars($_POST['token']);
                 $id = htmlspecialchars($_POST['id']);
 
@@ -151,14 +151,17 @@
                             return json_encode(['success' => true, 'message' => $message]);
                         }else
                         {
-                            return $this->forbidden($token);
+                            Log::store('[AUTH] Détection d\'un token invalide. (ID utilisateur: .'.$id.')', 2);
+                            return $this->forbidden($message);
                         }
                     }else
                     {
+                        Log::store('[AUTH] L\'ID du client ('.$id.') ne correspond pas au propriétaire du token '.$user['uniq_id'].'.', 2);
                         return $this->forbidden('invalidID');
                     }
                 }else
                 {
+                    Log::store('[AUTH] Le token client ne correspond à aucun token serveur. (ID utilisateur: .'.$id.')', 2);
                     return $this->forbidden('unknownToken');
                 }
             }else

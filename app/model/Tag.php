@@ -4,12 +4,11 @@
     
     use Illuminate\Database\Eloquent\Model;
 
-    class Log extends Model
+    class Tag extends Model
     {
         public $timestamps = true;
-        protected $table = 'logs';
+        protected $table = 'tags';
         protected $fillable = [
-            'message',
-            'level'
+            'name'
         ];
     }

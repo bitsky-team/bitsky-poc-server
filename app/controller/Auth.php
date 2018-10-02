@@ -4,7 +4,7 @@
     
     use \Kernel\JWT;
     use \Model\User;
-    use \Controller\Log;
+    use \Kernel\LogManager;
 
     class Auth extends Controller
     {
@@ -32,6 +32,7 @@
                         {
                             $token['lastname'] = $user['lastname'];
                             $token['firstname'] = $user['firstname'];
+                            $token['rank'] = $user['rank'];
                             $token['created_at'] = time();
                             $token['lifetime'] = 86400;
                             $token = JWT::encode($token);
@@ -90,6 +91,7 @@
 
                             $password = $received['password'];
                             $email = $received['email'];
+                            $received['rank'] = 1;
                             unset($received['password']);
                             unset($received['email']);
                             $auth_token = JWT::encode($received);
@@ -151,17 +153,17 @@
                             return json_encode(['success' => true, 'message' => $message]);
                         }else
                         {
-                            Log::store('[AUTH] Détection d\'un token invalide. (ID utilisateur: .'.$id.')', 2);
+                            LogManager::store('[AUTH] Détection d\'un token invalide. (ID utilisateur: '.$id.')', 2);
                             return $this->forbidden($message);
                         }
                     }else
                     {
-                        Log::store('[AUTH] L\'ID du client ('.$id.') ne correspond pas au propriétaire du token '.$user['uniq_id'].'.', 2);
+                        LogManager::store('[AUTH] L\'ID du client ('.$id.') ne correspond pas au propriétaire du token '.$user['uniq_id'].'.', 2);
                         return $this->forbidden('invalidID');
                     }
                 }else
                 {
-                    Log::store('[AUTH] Le token client ne correspond à aucun token serveur. (ID utilisateur: .'.$id.')', 2);
+                    LogManager::store('[AUTH] Le token client ne correspond à aucun token serveur. (ID utilisateur: '.$id.')', 2);
                     return $this->forbidden('unknownToken');
                 }
             }else

@@ -110,7 +110,7 @@
                     return json_encode(['success' => true, 'posts' => $posts]);
                 }else
                 {
-                    LogManager::store('[POST] Tentative de récupération des posts avec un token invalide (ID utilisateur: '.$owner_uniq_id.')', 2);
+                    LogManager::store('[POST] Tentative de récupération des posts avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
                     return $this->forbidden('invalidToken');
                 }
             }else

@@ -78,10 +78,14 @@
                     {
                         $post->delete();
                         return json_encode(['success' => true]);
+                    }else
+                    {
+                        LogManager::store('[POST] Tentative de suppression d\'un article sans autorisation (ID utilisateur: '.$uniq_id.')', 2);
+                        return $this->forbidden();
                     }
                 }else
                 {
-                    LogManager::store('[POST] Tentative de suppression d\'un article avec un token invalide (ID utilisateur: '.$owner_uniq_id.')', 2);
+                    LogManager::store('[POST] Tentative de suppression d\'un article avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
                     return $this->forbidden('invalidToken');
                 }
             }

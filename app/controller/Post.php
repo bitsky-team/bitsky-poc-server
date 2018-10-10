@@ -6,6 +6,7 @@
     use \Kernel\LogManager;
     use \Controller\Auth;
     use \Model\Post as PostModel;
+    use \Model\PostFavorite as PostFavoriteModel;
     use \Model\Tag as TagModel;
     use \Model\User as UserModel;
 
@@ -34,9 +35,11 @@
                     if($doesTagExists)
                     {
                         $tag = TagModel::where('name', $tag)->first();
+                        $tag->uses = $tag->uses + 1;
+                        $tag->save();
                     }else
                     {
-                        $tag = TagModel::create(['name' => $tag]);
+                        $tag = TagModel::create(['name' => ucfirst($tag), 'uses' => 1]);
                     }
 
                     $post = PostModel::create([
@@ -73,10 +76,22 @@
                 {
                     $user = UserModel::where('uniq_id', $uniq_id)->first();
                     $post = PostModel::where('id', $post_id)->first();
-
                     if($user->rank == 2 || $user->uniq_id == $post->owner_uniq_id)
                     {
-                        $post->delete();
+                        PostFavoriteModel::where('post_id', $post_id)->delete();
+                        
+                        $tag = TagModel::where('id', $post->tag_id)->first();
+                        
+                        if($tag->uses > 1) 
+                        {
+                            $tag->uses = $tag->uses - 1;
+                            $tag->save();
+                        }else
+                        {
+                            $tag->delete();
+                        }
+
+                        if($post != null) $post->delete();
                         return json_encode(['success' => true]);
                     }else
                     {
@@ -115,6 +130,136 @@
                 }else
                 {
                     LogManager::store('[POST] Tentative de récupération des posts avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
+        public function addFavorite()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['post_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $post_id = htmlspecialchars($_POST['post_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                    $post = PostModel::find($post_id);
+                    $post->favorites = $post->favorites + 1;
+                    $post->save();
+
+                    PostFavoriteModel::create([
+                        'post_id' => $post_id,
+                        'user_uniq_id' => $uniq_id
+                    ]);
+                    return json_encode(['success' => true]);
+                }else
+                {
+                    LogManager::store('[POST] Tentative d\'ajout d\'un post en favoris avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
+        public function removeFavorite()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['post_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $post_id = htmlspecialchars($_POST['post_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                    $post = PostModel::find($post_id);
+                    $post->favorites = $post->favorites - 1;
+                    $post->save();
+
+                    $postFavorite = PostFavoriteModel::where('post_id',$post_id)->where('user_uniq_id', $uniq_id)->first();
+                    $postFavorite->delete();
+                    
+                    return json_encode(['success' => true]);
+                }else
+                {
+                    LogManager::store('[POST] Tentative de retrait d\'un post en favoris avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
+        public function getFavoriteOfUser()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['post_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $post_id = htmlspecialchars($_POST['post_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                    $postFavorite = PostFavoriteModel::where('post_id',$post_id)
+                    ->where('user_uniq_id', $uniq_id)->first();
+
+                    return json_encode(['success' => true, 'favorite' => $postFavorite != null]);
+                }else
+                {
+                    LogManager::store('[POST] Tentative de récupération d\'un favoris de post avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
+        public function getTrends()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                    $tags = TagModel::orderBy('uses', 'desc')->take(3)->get();
+                    $trends = [];
+
+                    foreach($tags as $tag)
+                    {
+                        $post = PostModel::where('tag_id',$tag->id)->orderBy('id', 'desc')->first();
+                        $user = UserModel::where('uniq_id', $post->owner_uniq_id)->first();
+
+                        array_push($trends, [
+                            'name' => $tag->name,
+                            'post' => [
+                                'content' => $post->content,
+                                'owner'   => $user->firstname . ' ' . $user->lastname
+                            ]
+                        ]);
+                    }
+
+                    return json_encode(['success' => true, 'trends' => $trends]);
+                }else
+                {
+                    LogManager::store('[POST] Tentative de récupération d\'un favoris de post avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
                     return $this->forbidden('invalidToken');
                 }
             }else

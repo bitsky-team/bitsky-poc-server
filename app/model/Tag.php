@@ -9,6 +9,7 @@
         public $timestamps = true;
         protected $table = 'tags';
         protected $fillable = [
-            'name'
+            'name',
+            'uses'
         ];
     }

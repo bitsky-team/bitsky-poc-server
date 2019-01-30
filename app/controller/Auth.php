@@ -19,7 +19,7 @@
                     "password" => htmlspecialchars($_POST['password'])
                 ];
 
-                $emailCheck = preg_match('/^(?!(?:(?:\x22?\x5C[\x00-\x7E]\x22?)|(?:\x22?[^\x5C\x22]\x22?)){255,})(?!(?:(?:\x22?\x5C[\x00-\x7E]\x22?)|(?:\x22?[^\x5C\x22]\x22?)){65,}@)(?:(?:[\x21\x23-\x27\x2A\x2B\x2D\x2F-\x39\x3D\x3F\x5E-\x7E]+)|(?:\x22(?:[\x01-\x08\x0B\x0C\x0E-\x1F\x21\x23-\x5B\x5D-\x7F]|(?:\x5C[\x00-\x7F]))*\x22))(?:\.(?:(?:[\x21\x23-\x27\x2A\x2B\x2D\x2F-\x39\x3D\x3F\x5E-\x7E]+)|(?:\x22(?:[\x01-\x08\x0B\x0C\x0E-\x1F\x21\x23-\x5B\x5D-\x7F]|(?:\x5C[\x00-\x7F]))*\x22)))*@(?:(?:(?!.*[^.]{64,})(?:(?:(?:xn--)?[a-z0-9]+(?:-[a-z0-9]+)*\.){1,126}){1,}(?:(?:[a-z][a-z0-9]*)|(?:(?:xn--)[a-z0-9]+))(?:-[a-z0-9]+)*)|(?:\[(?:(?:IPv6:(?:(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){7})|(?:(?!(?:.*[a-f0-9][:\]]){7,})(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,5})?::(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,5})?)))|(?:(?:IPv6:(?:(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){5}:)|(?:(?!(?:.*[a-f0-9]:){5,})(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,3})?::(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,3}:)?)))?(?:(?:25[0-5])|(?:2[0-4][0-9])|(?:1[0-9]{2})|(?:[1-9]?[0-9]))(?:\.(?:(?:25[0-5])|(?:2[0-4][0-9])|(?:1[0-9]{2})|(?:[1-9]?[0-9]))){3}))\]))$/iD', $received['email']);
+                $emailCheck = preg_match('/^[a-zA-Z]\w+(?:\.[a-zA-Z]\w+){0,3}@[a-zA-Z]\w+(?:\.[a-zA-Z]\w+){1,3}$/', $received['email']);
                 $passwordCheckLength = strlen($received['password']) >= 8;
                 
                 if($emailCheck && $passwordCheckLength)
@@ -38,7 +38,7 @@
                             $token = JWT::encode($token);
                             $user->update(['token' => $token]);
 
-                            return json_encode(['success' => true, 'message' => $token, 'uniq_id' => $user['uniq_id']]);
+                            return json_encode(['success' => true, 'message' => $token, 'uniq_id' => $user['uniq_id'], 'avatar' => $user['avatar']]);
                         }else
                         {
                             return $this->forbidden('Mot de passe incorrect !');
@@ -61,15 +61,15 @@
             if($notEmpty)
             {
                 $received = [
-                    "uniq_id"           =>  md5(uniqid()),
-                    "email"             =>  htmlspecialchars($_POST['email']),
-                    "password"          =>  htmlspecialchars($_POST['password']),
-                    "repeatPassword"    =>  htmlspecialchars($_POST['repeatPassword']),
-                    "lastname"          =>  htmlspecialchars(ucfirst($_POST['lastname'])),
-                    "firstname"         =>  htmlspecialchars(ucfirst($_POST['firstname']))
+                    "uniq_id" =>  md5(uniqid()),
+                    "email" =>  htmlspecialchars($_POST['email']),
+                    "password" =>  htmlspecialchars($_POST['password']),
+                    "repeatPassword" =>  htmlspecialchars($_POST['repeatPassword']),
+                    "lastname" =>  htmlspecialchars(ucfirst($_POST['lastname'])),
+                    "firstname" =>  htmlspecialchars(ucfirst($_POST['firstname']))
                 ];
 
-                $emailCheck = preg_match('/^(?!(?:(?:\x22?\x5C[\x00-\x7E]\x22?)|(?:\x22?[^\x5C\x22]\x22?)){255,})(?!(?:(?:\x22?\x5C[\x00-\x7E]\x22?)|(?:\x22?[^\x5C\x22]\x22?)){65,}@)(?:(?:[\x21\x23-\x27\x2A\x2B\x2D\x2F-\x39\x3D\x3F\x5E-\x7E]+)|(?:\x22(?:[\x01-\x08\x0B\x0C\x0E-\x1F\x21\x23-\x5B\x5D-\x7F]|(?:\x5C[\x00-\x7F]))*\x22))(?:\.(?:(?:[\x21\x23-\x27\x2A\x2B\x2D\x2F-\x39\x3D\x3F\x5E-\x7E]+)|(?:\x22(?:[\x01-\x08\x0B\x0C\x0E-\x1F\x21\x23-\x5B\x5D-\x7F]|(?:\x5C[\x00-\x7F]))*\x22)))*@(?:(?:(?!.*[^.]{64,})(?:(?:(?:xn--)?[a-z0-9]+(?:-[a-z0-9]+)*\.){1,126}){1,}(?:(?:[a-z][a-z0-9]*)|(?:(?:xn--)[a-z0-9]+))(?:-[a-z0-9]+)*)|(?:\[(?:(?:IPv6:(?:(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){7})|(?:(?!(?:.*[a-f0-9][:\]]){7,})(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,5})?::(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,5})?)))|(?:(?:IPv6:(?:(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){5}:)|(?:(?!(?:.*[a-f0-9]:){5,})(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,3})?::(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,3}:)?)))?(?:(?:25[0-5])|(?:2[0-4][0-9])|(?:1[0-9]{2})|(?:[1-9]?[0-9]))(?:\.(?:(?:25[0-5])|(?:2[0-4][0-9])|(?:1[0-9]{2})|(?:[1-9]?[0-9]))){3}))\]))$/iD', $received['email']);
+                $emailCheck = preg_match('/^[a-zA-Z]\w+(?:\.[a-zA-Z]\w+){0,3}@[a-zA-Z]\w+(?:\.[a-zA-Z]\w+){1,3}$/', $received['email']);
                 $passwordCheckLength = strlen($received['password']) >= 8;
                 $repeatPasswordCheckLength = strlen($received['repeatPassword']) >= 8;
                 $passwordCheckEquality = $received['password'] == $received['repeatPassword'];
@@ -115,7 +115,7 @@
                 }else
                 {
                     $message = '<p>Veuillez vérifier les points suivants:</p><ul id=\'errorsList\'>';
-                    if(!$emailCheck) $message .= '<li>Votre adresse email est incorrecte</li>';
+                    if(!$emailCheck) $message .= '<li>Votre adresse email est incorrecte.</li>';
                     if(!$passwordCheckLength && !$repeatPasswordCheckLength) $message .= '<li>Les mots de passe doivent comporter au moins 8 caractères</li>';
                     if(!$passwordCheckEquality) $message .= '<li>Les mots de passe ne sont pas identiques</li>';
                     if(!$lastnameCheck) $message .= '<li>Votre nom doit comporter au moins 2 caractères</li>';
@@ -176,6 +176,7 @@
         {
             $notEmpty = !empty($_POST['uniq_id']) &&
                         !empty($_POST['token']) && 
+                        !empty($_POST['avatar']) && 
                         !empty($_POST['biography']) && 
                         !empty($_POST['sex']) && 
                         !empty($_POST['birthdate']) && 
@@ -187,15 +188,16 @@
             if($notEmpty)
             {
                 $received = [
-                    "uniq_id"             =>  htmlspecialchars($_POST['uniq_id']), 
-                    "token"               =>  htmlspecialchars($_POST['token']),  
-                    "biography"           =>  htmlspecialchars($_POST['biography']),
-                    "sex"                 =>  htmlspecialchars($_POST['sex']),
-                    "birthdate"           =>  htmlspecialchars($_POST['birthdate']),
-                    "relationshipstatus"  =>  htmlspecialchars($_POST['relationshipstatus']),
-                    "job"                 =>  htmlspecialchars($_POST['job']),
-                    "birthplace"          =>  htmlspecialchars($_POST['birthplace']),
-                    "livingplace"         =>  htmlspecialchars($_POST['livingplace'])
+                    "uniq_id"  =>  htmlspecialchars($_POST['uniq_id']), 
+                    "token"  =>  htmlspecialchars($_POST['token']),  
+                    "avatar"  =>  htmlspecialchars($_POST['avatar']),
+                    "biography"  =>  htmlspecialchars($_POST['biography']),
+                    "sex" =>  htmlspecialchars($_POST['sex']),
+                    "birthdate" =>  htmlspecialchars($_POST['birthdate']),
+                    "relationshipstatus" =>  htmlspecialchars($_POST['relationshipstatus']),
+                    "job" =>  htmlspecialchars($_POST['job']),
+                    "birthplace" =>  htmlspecialchars($_POST['birthplace']),
+                    "livingplace" =>  htmlspecialchars($_POST['livingplace'])
                 ];
 
                 $verify = json_decode($this->verify($received['token'], $received['uniq_id']));
@@ -214,14 +216,15 @@
                     {
                         User::where('uniq_id', $received['uniq_id'])
                             ->update([
-                                "firsttime"           =>  0,  
-                                "biography"           =>  $received['biography'],
-                                "sex"                 =>  $received['sex'],
-                                "birthdate"           =>  $received['birthdate'],
-                                "relationshipstatus"  =>  $received['relationshipstatus'],
-                                "job"                 =>  $received['job'],
-                                "birthplace"          =>  $received['birthplace'],
-                                "livingplace"         =>  $received['livingplace']
+                                "firsttime" =>  0,  
+                                "avatar" =>  $received['avatar'],
+                                "biography" =>  $received['biography'],
+                                "sex"  =>  $received['sex'],
+                                "birthdate" =>  $received['birthdate'],
+                                "relationshipstatus" =>  $received['relationshipstatus'],
+                                "job" =>  $received['job'],
+                                "birthplace"  =>  $received['birthplace'],
+                                "livingplace" =>  $received['livingplace']
                             ]);
 
                         return json_encode(['success' => true]);

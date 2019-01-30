@@ -1,5 +1,11 @@
 <phpunit bootstrap="vendor/autoload.php">
     <php>
         <ini name="display_errors" value="true"/>
+        <env name="DB_HOST" value="localhost"/>
+        <env name="DB_PORT" value="3306"/>
+        <env name="DB_DATABASE" value="bitsky"/>
+        <env name="DB_USERNAME" value="root"/>
+        <env name="DB_PASSWORD" value="JS451@"/>
+        <env name="APP_SECRET_KEY" value="123"/>
     </php>
 </phpunit>

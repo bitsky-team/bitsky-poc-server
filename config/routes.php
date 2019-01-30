@@ -8,11 +8,11 @@
      */
 
     $routes = array();
-    $dir = scandir('../routes');
+    $dir = scandir('/var/www/html/routes');
     $files = array_diff($dir, array('..', '.'));
     
     foreach($files as $file) {
-        $array = require_once('../routes/' . $file);
+        $array = require_once('/var/www/html/routes/' . $file);
         $routes = array_merge($routes, $array);
     }
 

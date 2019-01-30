@@ -88,4 +88,4 @@
 
             return strtoupper($uuid);
         }
-    }
+    } 

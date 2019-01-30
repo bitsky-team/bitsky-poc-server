@@ -3,25 +3,22 @@
 
     class LogManager
     {
-        public static function store($message, $level)
+        public static function store($message, $level, $prepath = '/var/www/html/')
         {
-            if (!file_exists('../logs')) 
+            $dir = $prepath . 'logs';
+            
+            if (!file_exists($dir)) 
             {
-                mkdir('../logs', 0777, true);
+                mkdir($dir, 0777, true);
             }
 
-            $logFile = '../logs/' . date('d-m-Y');
+            $logFile = $dir . '/' . date('d-m-Y');
             $message = '['.date("H:i:s").'] Niveau ' . $level . ' => ' . $message;
 
-            if (file_exists($logFile)) 
-            {
-                $fh = fopen($logFile, 'a');
-                fwrite($fh, $message."\n");
-            }else
-            {
-                $fh = fopen($logFile, 'w');
-                fwrite($fh, $message."\n");
-            }
+            if(!file_exists($logFile)) touch($logFile);
+
+            $fh = fopen($logFile, 'a');
+            fwrite($fh, $message."\n");
 
             fclose($fh);
         }

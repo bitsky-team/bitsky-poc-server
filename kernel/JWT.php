@@ -188,7 +188,7 @@ class JWT
 		);
 	}
 
-	// ------- RESTPHP's additions
+	// ------- Bitsky's additions
 
 	/**
 	 * Method who check the JWT
@@ -198,8 +198,8 @@ class JWT
 	 */
 	public static function check($token, $key = null)
 	{
-		if(is_null($key)) $key = getenv('APP_SECRET_KEY');
-		try {
+		try
+		{
 			$check = self::decode($token);
 		}catch(\Exception $e)
 		{

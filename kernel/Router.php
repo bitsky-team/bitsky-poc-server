@@ -99,15 +99,15 @@
                         echo $controller->{$request[3]}();
                     }else
                     {
-                        die(json_encode(['success' => false, 'error' => 'controllerMethodNotFound', 'name' => $request[3]]));                                            
+                        echo json_encode(['success' => false, 'error' => 'controllerMethodNotFound', 'name' => $request[3]]);
                     }
                 }else
                 {
-                    die(json_encode(['success' => false, 'error' => 'controllerNotFound', 'name' => ucfirst($request[2])]));                    
+                    echo json_encode(['success' => false, 'error' => 'controllerNotFound', 'name' => ucfirst($request[2])]);
                 }
             }else
             {
-                die(json_encode(['success' => false, 'error' => '403']));
+                echo json_encode(['success' => false, 'error' => '403']);
             }
         }
     }

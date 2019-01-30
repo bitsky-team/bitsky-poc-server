@@ -9,6 +9,7 @@
     use \Model\PostFavorite as PostFavoriteModel;
     use \Model\Tag as TagModel;
     use \Model\User as UserModel;
+    use \Model\PostComment as PostCommentModel;
 
     class Post extends Controller
     {
@@ -79,7 +80,8 @@
                     if($user->rank == 2 || $user->uniq_id == $post->owner_uniq_id)
                     {
                         PostFavoriteModel::where('post_id', $post_id)->delete();
-                        
+                        PostCommentModel::where('post_id', $post_id)->delete();
+
                         $tag = TagModel::where('id', $post->tag_id)->first();
                         
                         if($tag->uses > 1) 
@@ -106,6 +108,48 @@
             }
         }
 
+        public function get()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                   if(!empty($_POST['post_id']))
+                   {
+                        $id = htmlspecialchars($_POST['post_id']);
+
+                        $post = PostModel::where('id', $id)->first();
+
+                        if($post != null)
+                        {
+                            $post->tag = TagModel::where('id', $post->tag_id)->first()->name;
+                            $post->owner = UserModel::where('uniq_id', $post->owner_uniq_id)->first(['firstname', 'lastname', 'rank', 'avatar']);
+                            unset($post->owner_uniq_id);
+                            return json_encode(['success' => true, 'post' => $post]);
+                        }else
+                        {
+                            return $this->forbidden('notFound');
+                        }
+                   }else
+                   {
+                       return $this->forbidden();
+                   }                 
+                }else
+                {
+                    LogManager::store('[POST] Tentative de récupération d\'un post avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
         public function getAll() 
         {
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
@@ -122,10 +166,10 @@
                     foreach($posts as $post)
                     {
                         $post->tag = TagModel::where('id', $post->tag_id)->first()->name;
-                        $post->owner = UserModel::where('uniq_id', $post->owner_uniq_id)->first(['firstname', 'lastname', 'rank']);
+                        $post->owner = UserModel::where('uniq_id', $post->owner_uniq_id)->first(['firstname', 'lastname', 'rank', 'avatar']);
                         unset($post->owner_uniq_id);
                     }
-
+                    
                     return json_encode(['success' => true, 'posts' => $posts]);
                 }else
                 {
@@ -260,6 +304,167 @@
                 }else
                 {
                     LogManager::store('[POST] Tentative de récupération d\'un favoris de post avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
+        public function getAllComments()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                    $comments = PostCommentModel::orderBy('created_at', 'asc')->get();
+
+                    foreach($comments as $comment)
+                    {
+                        $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['firstname', 'lastname', 'avatar']);
+                        unset($comment->owner_id);
+                    }
+                    
+                    return json_encode(['success' => true, 'comments' => $comments]);
+                }else
+                {
+                    LogManager::store('[POST] Tentative de récupération des commentaires avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
+        public function getCommentsCount() 
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                    if(!empty($_POST['post_id']))
+                    {
+                        $post_id = htmlspecialchars($_POST['post_id']);
+                        $commentsCount = PostCommentModel::where('post_id', $post_id)->count();
+                        
+                        return json_encode(['success' => true, 'commentsCount' => $commentsCount]);
+                    }else
+                    {
+                        return $this->forbidden('noPostId');    
+                    }
+                }else
+                {
+                    LogManager::store('[POST] Tentative de récupération du nombre de commentaires avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
+        public function getBestComments()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                    if(!empty($_POST['post_id']))
+                    {
+                        $post_id = htmlspecialchars($_POST['post_id']);
+                        $comments = PostCommentModel::where('post_id', $post_id)->orderBy('favorites', 'desc')->take(3)->get();
+
+                        foreach($comments as $comment)
+                        {
+                            $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['firstname', 'lastname', 'avatar']);
+                            unset($comment->owner_id);
+                        }
+                        
+                        return json_encode(['success' => true, 'comments' => $comments]);
+                    }else
+                    {
+                        return $this->forbidden('noPostId');
+                    }
+                }else
+                {
+                    LogManager::store('[POST] Tentative de récupération des meilleurs commentaires avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
+        public function addComment()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                    if(!empty($_POST['post_id']) && !empty($_POST['content']))
+                    {
+                        $post_id = htmlspecialchars($_POST['post_id']);
+                        $content = htmlspecialchars(trim($_POST['content']));
+
+                        $post = PostModel::where('id', $post_id)->first();
+
+                        if($post != null)
+                        {
+                            if(strlen($content) > 0)
+                            {
+                                $comment = PostCommentModel::create([
+                                    'owner_id' => $uniq_id,
+                                    'post_id' => $post_id,
+                                    'content' => $content
+                                ]);
+        
+                                if($comment != null)
+                                {
+                                    $post->comments = $post->comments + 1;
+                                    $post->save();
+                                    return json_encode(['success' => true, 'comment' => $comment]);
+                                }else
+                                {
+                                    return $this->forbidden();
+                                }
+                            }else
+                            {
+                                return $this->forbidden('contentEmpty');
+                            }
+                        }else
+                        {
+                            return $this->forbidden('postNotFound');
+                        }
+                    }else
+                    {
+                        return $this->forbidden('notFilled');
+                    }
+                }else
+                {
+                    LogManager::store('[POST] Tentative de création d\'un commentaire avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
                     return $this->forbidden('invalidToken');
                 }
             }else

@@ -16,12 +16,14 @@
             'firstname',
             'token',
             'firsttime',
+            'avatar',
             'biography',
             'sex',
             'birthdate',
             'relationshipstatus',
             'job',
             'birthplace',
-            'livingplace'
+            'livingplace',
+            'rank'
         ];
     }

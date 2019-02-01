@@ -582,6 +582,10 @@
                                 {
                                     $post->comments = $post->comments + 1;
                                     $post->save();
+
+                                    $comment->owner = UserModel::where('uniq_id', $uniq_id)->first(['firstname', 'lastname', 'avatar']);
+                                    unset($comment->owner_id);
+
                                     return json_encode(['success' => true, 'comment' => $comment]);
                                 }else
                                 {

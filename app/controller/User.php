@@ -7,6 +7,8 @@ use \Kernel\LogManager;
 use \Model\User as UserModel;
 use \Model\Post as PostModel;
 use \Model\PostFavorite as PostFavoriteModel;
+use \Model\PostComment as PostCommentModel;
+use \Model\PostCommentFavorite as PostCommentFavoriteModel;
 use \Model\Tag as TagModel;
 
 class User extends Controller
@@ -171,12 +173,14 @@ class User extends Controller
                     $user = UserModel::where('id', $id)->first();
                     $posts = PostModel::where('owner_uniq_id', $user['uniq_id']);
                     $postFavorites = PostFavoriteModel::where('user_uniq_id', $user['uniq_id']);
+                    $postComments = PostCommentModel::where('owner_id', $user['uniq_id']);
+                    $postCommentFavorites = PostCommentFavoriteModel::where('user_uniq_id', $user['uniq_id']);
 
                     if($user['rank'] == 2)
                     {
                         if($user['uniq_id'] == $me['uniq_id'])
                         {
-                            $this->deleteAllUserData($user, $posts, $postFavorites);
+                            $this->deleteAllUserData($user, $posts, $postFavorites, $postComments, $postCommentFavorites);
                             return json_encode(['success' => true]);
                         } else
                         {
@@ -184,7 +188,7 @@ class User extends Controller
                         }
                     } else 
                     {
-                        $this->deleteAllUserData($user, $posts, $postFavorites);
+                        $this->deleteAllUserData($user, $posts, $postFavorites, $postComments, $postCommentFavorites);
                         return json_encode(['success' => true]);
                     }
                 }else 
@@ -201,7 +205,7 @@ class User extends Controller
         }
     }
 
-    public function deleteAllUserData($user, $posts, $postFavorites) 
+    public function deleteAllUserData($user, $posts, $postFavorites, $postComments, $postCommentFavorites) 
     {
         // Deleting user
         $user->delete();
@@ -209,10 +213,10 @@ class User extends Controller
         // Deleting tags used by user's posts
         foreach($posts->get() as $post) 
         {
-            $tag = TagModel::where('id', $post['tag_id'])->first();
-            if($tag['uses'] > 1)
+            $tag = TagModel::where('id', $post->tag_id)->first();
+            if($tag->uses > 1)
             {
-                $tag['uses'] = $tag['uses'] - 1;
+                $tag->uses = $tag->uses - 1;
                 $tag->save();
             } else 
             {
@@ -223,14 +227,40 @@ class User extends Controller
         // Deleting user's favorites and decrementing concerned posts
         foreach($postFavorites->get() as $postFavorite) 
         {
-            $post = PostModel::where('id', $postFavorite['post_id'])->first();
-            $post['favorites'] = $post['favorites'] - 1;
+            $post = PostModel::where('id', $postFavorite->post_id)->first();
+            $post->favorites = $post->favorites - 1;
             $post->save();
         }
 
         $postFavorites->delete();
 
-        // Deleting user's posts
+        // Deleting user's post comments and the comments favorites and decrementing concerned posts
+        foreach($postComments->get() as $postComment) 
+        {
+            $favorites = PostCommentFavoriteModel::where('post_comment_id', $postComment->id)->delete();
+            $post = PostModel::where('id', $postComment->post_id)->first();
+            $post->comments = $post->comments - 1;
+            $post->save();
+        }
+
+        $postComments->delete();
+
+        // Deleting user's post comment favorites
+        foreach($postCommentFavorites->get() as $postCommentFavorite) 
+        {
+            $comment = PostCommentModel::where('id', $postCommentFavorite->post_comment_id)->first();
+            $comment->favorites = $comment->favorites - 1;
+            $comment->save();
+        }
+
+        $postCommentFavorites->delete();
+
+        // Deleting user's posts and the posts favorites
+        foreach($posts->get() as $post)
+        {
+            PostFavoriteModel::where('post_id', $post->id)->delete();
+        }
+
         $posts->delete();
     }
 }

@@ -192,6 +192,68 @@
             }
         }
 
+        public function getScore()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                   if(!empty($_POST['post_id']))
+                   {
+                        $id = htmlspecialchars($_POST['post_id']);
+
+                        $post = PostModel::where('id', $id)->first();
+
+                        if($post != null)
+                        {
+                            $score = 16;
+
+                            $favorites = PostFavoriteModel::where('post_id', $id)->get();
+
+                            foreach($favorites as $favorite)
+                            {
+                                $score += 8;
+                            }
+
+                            $comments = PostCommentModel::where('post_id', $id)->get();
+
+                            foreach($comments as $comment)
+                            {
+                                $score += 4;
+
+                                $commentFavorites = PostCommentFavoriteModel::where('post_comment_id', $comment->id)->get();
+
+                                foreach($commentFavorites as $commentFavorites)
+                                {
+                                    $score += 2;
+                                }
+                            }
+
+                            return json_encode(['success' => true, 'score' => $score]);
+                        }else
+                        {
+                            return $this->forbidden('notFound');
+                        }
+                   }else
+                   {
+                       return $this->forbidden();
+                   }                 
+                }else
+                {
+                    LogManager::store('[POST] Tentative de récupération du score d\'un post avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
         public function addFavorite()
         {
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['post_id']))
@@ -293,7 +355,59 @@
 
                 if($verify->success)
                 {
-                    $tags = TagModel::orderBy('uses', 'desc')->take(3)->get();
+                    $tags = TagModel::orderBy('uses', 'desc')->get();
+
+                    // Score definition
+                    foreach($tags as $tag)
+                    {
+                        $tag->score = 0;
+
+                        $posts = PostModel::where('tag_id',$tag->id)->get();
+
+                        foreach($posts as $post)
+                        {
+                            $tag->score += 16;
+
+                            $favorites = PostFavoriteModel::where('post_id', $post->id)->get();
+
+                            foreach($favorites as $favorite)
+                            {
+                                $tag->score += 8;
+                            }
+
+                            $comments = PostCommentModel::where('post_id', $post->id)->get();
+
+                            foreach($comments as $comment)
+                            {
+                                $tag->score += 4;
+
+                                $commentFavorites = PostCommentFavoriteModel::where('post_comment_id', $comment->id)->get();
+
+                                foreach($commentFavorites as $commentFavorite)
+                                {
+                                    $tag->score += 2;
+                                }
+                            }
+                        }
+                    }
+
+                    // Score sorting
+                    $scores = [];
+
+                    foreach($tags as $key => $row)
+                    {
+                        $scores[$key] = $row['score'];
+                    }
+
+                    $tags = json_decode(json_encode($tags), true);
+
+                    array_multisort($scores, SORT_DESC, $tags);
+
+                    // Get 3 best tags
+                    $tags = array_slice($tags, 0, 3);
+                    $tags = json_decode(json_encode($tags));
+
+                    
                     $trends = [];
 
                     foreach($tags as $tag)
@@ -303,6 +417,7 @@
 
                         array_push($trends, [
                             'name' => $tag->name,
+                            'score' => $tag->score,
                             'post' => [
                                 'content' => $post->content,
                                 'owner'   => $user->firstname . ' ' . $user->lastname

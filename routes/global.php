@@ -17,6 +17,7 @@ return [
     [   'POST',      '/post_remove_favorite',               'post',          'removeFavorite'               ],
     [   'POST',      '/post_get_user_favorite',             'post',          'getFavoriteOfUser'            ],
     [   'POST',      '/get_post',                           'post',          'get'                          ],
+    [   'POST',      '/get_post_score',                     'post',          'getScore'                     ],
     [   'POST',      '/get_allposts',                       'post',          'getAll'                       ],
     [   'POST',      '/get_trends',                         'post',          'getTrends'                    ],
     [   'POST',      '/get_allcomments',                    'post',          'getAllComments'               ],

@@ -171,7 +171,19 @@
 
                 if($verify->success)
                 {
-                    $posts = PostModel::orderBy('created_at', 'desc')->get();
+                    $tagName = (!empty($_POST['trend'])) ? htmlspecialchars($_POST['trend']) : null;
+
+                    $posts = null;
+
+                    if(empty($tagName))
+                    {
+                        $posts = PostModel::orderBy('created_at', 'desc')->get();
+                    }else
+                    {
+                        $tag = TagModel::where('name', $tagName)->first();
+
+                        $posts = PostModel::where('tag_id', $tag->id)->orderBy('created_at', 'desc')->get();
+                    }
 
                     foreach($posts as $post)
                     {

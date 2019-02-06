@@ -8,8 +8,6 @@
     use \Model\Post as PostModel;
     use \Model\User as UserModel;
     use \Model\PostFavorite as PostFavoriteModel;
-    use \Model\PostComment as PostCommentModel;
-    use \Model\PostCommentFavorite as PostCommentFavoriteModel;
 
     class PostControllerTest extends TestCase
     {        
@@ -82,6 +80,26 @@
             $favorite = $postController->getFavoriteOfUser();
             $favorite = json_decode($favorite, true);
             $this->assertFalse($favorite['favorite']);
+        }
+
+        public function testRemove() : void
+        {
+            Kernel::bootEloquent();
+            $postController = new PostController();
+
+            // Get Admin Account
+            $admin = UserModel::where('rank', 2)->first();
+            $_POST['token'] = $admin['token'];
+            $_POST['uniq_id'] = $admin['uniq_id'];
+
+            // Preparing data
+            $lastPost = PostModel::orderBy('created_at', 'desc')->first();
+            $_POST['post_id'] = $lastPost['id'];
+
+            // Removing
+            $result = $postController->remove();
+            $result = json_decode($result, true);
+            $this->assertTrue($result['success']);
         }
 
         public function testGet() : void
@@ -159,118 +177,6 @@
 
             // Adding comment
             $result = $postController->addComment();
-            
-            $post = PostModel::find($lastPost['id']);
-            $this->assertTrue($post->comments > $lastPost->comments);
-
-            $result = json_decode($result, true);
-            $this->assertTrue($result['success']);
-        }
-
-        public function testAddCommentFavorite() : void
-        {
-            Kernel::bootEloquent();
-            $postController = new PostController();
-
-            // Get Admin Account
-            $admin = UserModel::where('rank', 2)->first();
-            $_POST['token'] = $admin['token'];
-            $_POST['owner_id'] = $admin['uniq_id'];
-
-            // Preparing data
-            $comment = PostCommentModel::orderBy('created_at', 'desc')->first();
-            $pastFavorites = $comment['favorites'];
-            $_POST['post_comment_id'] = $comment['id'];
-
-            $result = $postController->addCommentFavorite();
-            $comment = $comment->fresh();
-            $this->assertTrue($pastFavorites < $comment['favorites']);
-
-            $result = json_decode($result, true);
-            $this->assertTrue($result['success']);
-        }
-
-        public function testGetCommentFavoriteOfUser() : void
-        {
-            Kernel::bootEloquent();
-            $postController = new PostController();
-
-            // Get Admin Account
-            $admin = UserModel::where('rank', 2)->first();
-            $_POST['token'] = $admin['token'];
-            $_POST['owner_id'] = $admin['uniq_id'];
-
-            // Preparing data
-            $comment = PostCommentModel::orderBy('created_at', 'desc')->first();
-            $_POST['post_comment_id'] = $comment['id'];
-
-            $result = $postController->getCommentFavoriteOfUser();
-            
-            $result = json_decode($result, true);
-            $this->assertTrue($result['success']);
-        }
-
-        public function testRemoveCommentFavorite() : void
-        {
-            Kernel::bootEloquent();
-            $postController = new PostController();
-
-            // Get Admin Account
-            $admin = UserModel::where('rank', 2)->first();
-            $_POST['token'] = $admin['token'];
-            $_POST['owner_id'] = $admin['uniq_id'];
-
-            // Preparing data
-            $comment = PostCommentModel::orderBy('created_at', 'desc')->first();
-            $_POST['post_comment_id'] = $comment['id'];
-
-            $result = $postController->removeCommentFavorite();
-            
-            $result = json_decode($result, true);
-            $this->assertTrue($result['success']);
-        }
-
-        public function testRemoveComment() : void
-        {
-            Kernel::bootEloquent();
-            $postController = new PostController();
-
-            // Get Admin Account
-            $admin = UserModel::where('rank', 2)->first();
-            $_POST['token'] = $admin['token'];
-            $_POST['owner_id'] = $admin['uniq_id'];
-
-            // Preparing data
-            $comment = PostCommentModel::orderBy('created_at', 'desc')->first();
-            $_POST['comment_id'] = $comment['id'];
-
-            // Removing comment
-            $result = $postController->removeComment();
-
-            $favoriteComment = PostCommentFavoriteModel::where('post_comment_id', $comment['id'])->get()->toArray();
-
-            $result = json_decode($result, true);
-            $this->assertTrue($result['success']);
-
-            $this->assertTrue(count($favoriteComment) == 0);
-        }
-
-        public function testRemove() : void
-        {
-            Kernel::bootEloquent();
-            $postController = new PostController();
-
-            // Get Admin Account
-            $admin = UserModel::where('rank', 2)->first();
-            $_POST['token'] = $admin['token'];
-            $_POST['uniq_id'] = $admin['uniq_id'];
-
-            // Preparing data
-            $lastPost = PostModel::orderBy('created_at', 'desc')->first();
-            $_POST['post_id'] = $lastPost['id'];
-
-            // Removing
-            $result = $postController->remove();
             $result = json_decode($result, true);
             $this->assertTrue($result['success']);
         }

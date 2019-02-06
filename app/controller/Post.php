@@ -431,6 +431,7 @@
                             'name' => $tag->name,
                             'score' => $tag->score,
                             'post' => [
+                                'id' => $post->id,
                                 'content' => $post->content,
                                 'owner'   => $user->firstname . ' ' . $user->lastname
                             ]

@@ -60,23 +60,15 @@ class User extends Controller
                 if(!empty($_POST['user_id'])) {
                     $userId = htmlspecialchars($_POST['user_id']);
 
-                    $user = UserModel::where('uniq_id', $uniq_id)->first();
+                    $user = UserModel::where('id', $userId)->first();
 
-                    if ($user['rank'] == 2) {
-                        $user = UserModel::where('id', $userId)->first();
+                    if($user != null) {
 
-                        if($user != null) {
+                        return json_encode(['success' => true, 'user' => $user]);
 
-                            return json_encode(['success' => true, 'user' => $user]);
+                    }else {
 
-                        }else {
-
-                            return $this->forbidden('notFound');
-                        }
-                    } else 
-                    {
-                        LogManager::store('[POST] Tentative de récupération de l\'utilisateur avec un rang trop bas (ID utilisateur: ' . $uniq_id . ')', 2);
-                        return $this->forbidden('forbidden');
+                        return $this->forbidden('notFound');
                     }
                 }
             } else 

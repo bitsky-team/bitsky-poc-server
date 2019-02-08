@@ -47,6 +47,27 @@
             $this->assertFalse($users['success']);
         }
 
+        public function testGetUser() : void
+        {
+            Kernel::bootEloquent();
+            $userController = new UserController();
+
+            // Get Admin Account
+            $admin = UserModel::where('rank', 2)->first();
+            $_POST['token'] = $admin['token'];
+            $_POST['uniq_id'] = $admin['uniq_id'];
+
+            // Preparing data
+            $_POST['user_id'] = $admin['id'];
+
+            // Get post
+            $result = $userController->getById();
+            $result = json_decode($result, true);
+
+            $this->assertTrue($result['success']);
+            $this->assertTrue(!is_null($result['user']));
+        }
+
         public function testCreateAsAdmin() : void
         {
             Kernel::bootEloquent();

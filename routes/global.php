@@ -33,6 +33,7 @@ return [
     [   'POST',      '/create_user',                        'user',          'create'                       ],
     [   'POST',      '/delete_user',                        'user',          'delete'                       ],                
     [   'POST',      '/get_allusers',                       'user',          'getAll'                       ],
+    [   'POST',      '/get_user',                           'user',          'getById'                      ],
 
     [   'GET',       '/get_ranks',                          'rank',          'getAll'                       ],
 ];

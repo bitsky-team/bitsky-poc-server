@@ -30,7 +30,8 @@ return [
     [   'POST',      '/post_add_comment_favorite',          'post',          'addCommentFavorite'           ],
     [   'POST',      '/post_remove_comment_favorite',       'post',          'removeCommentFavorite'        ],
 
-    [   'POST',      '/create_user',                        'user',          'create'                       ],
+    [   'POST',      '/create_user',                        'user',          'createOrUpdate'                       ],
+    [   'POST',      '/update_user',                        'user',          'createOrUpdate'                       ],
     [   'POST',      '/delete_user',                        'user',          'delete'                       ],                
     [   'POST',      '/get_allusers',                       'user',          'getAll'                       ],
     [   'POST',      '/get_user',                           'user',          'getById'                      ],

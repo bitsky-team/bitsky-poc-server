@@ -81,12 +81,17 @@ class User extends Controller
         }
     }
 
-    public function create()
+    public function createOrUpdate()
     {
+        $type = null; 
+
+        if(!empty($_POST['type'])) $type = htmlspecialchars($_POST['type']);
+
         $notEmpty = !empty($_POST['token']) && !empty($_POST['uniq_id']) &&
                                 !empty($_POST['lastname']) && !empty($_POST['firstname']) &&
                                 !empty($_POST['email']) && !empty($_POST['rank']) &&
-                                !empty($_POST['password']) && !empty($_POST['repeatPassword']) &&
+                                (!empty($_POST['password']) || $type == 'UPDATE') && 
+                                (!empty($_POST['repeatPassword']) || $type == 'UPDATE') &&
                                 !empty($_POST['biography']) && !empty($_POST['sex']) &&
                                 !empty($_POST['job']) && !empty($_POST['birthdate']) &&
                                 !empty($_POST['birthplace']) && !empty($_POST['relationshipstatus']) &&
@@ -126,9 +131,9 @@ class User extends Controller
                         $isFirstnameOk = strlen($received['firstname']) >= 2;
                         $isEmailOk = filter_var($received['email'], FILTER_VALIDATE_EMAIL);
                         $isRankOk = in_array($received['rank'], $ranks);
-                        $isPasswordOk = strlen($received['password']) >= 8;
-                        $isRepeatPasswordOk = strlen($received['repeatPassword']) >= 8;
-                        $arePasswordOk = $received['password'] == $received['repeatPassword'];
+                        $isPasswordOk = strlen($received['password']) >= 8 || $type == 'UPDATE';
+                        $isRepeatPasswordOk = strlen($received['repeatPassword']) >= 8 || $type == 'UPDATE';
+                        $arePasswordOk = $received['password'] == $received['repeatPassword'] || $type == 'UPDATE';
                         $isBiographyOk = strlen($received['biography']) >= 10;
                         $isSexOk = in_array($received['sex'], ['Homme', 'Femme', 'Autre']);
                         $isJobOk = strlen($received['job']) >= 3;
@@ -140,25 +145,31 @@ class User extends Controller
     
                         if ($isFormOk)
                         {
-                            if(count(UserModel::where('email', $received['email'])->get()) == 0)
+                            if((count(UserModel::where('email', $received['email'])->get()) == 0 || $type == 'UPDATE'))
                             {
-                                $newUser = new UserModel();
-                                $newUser->uniq_id = $received['uniq_id'];
-                                $newUser->email = $received['email'];
-                                $newUser->password = password_hash($received['password'], PASSWORD_BCRYPT);
-                                $newUser->lastname = $received['lastname'];
-                                $newUser->firstname = $received['firstname'];
-                                $newUser->rank = $received['rank'];
-                                $newUser->biography = $received['biography'];
-                                $newUser->sex = $received['sex'];
-                                $newUser->job = $received['job'];
-                                $newUser->birthdate = $received['birthdate'];
-                                $newUser->birthplace = $received['birthplace'];
-                                $newUser->relationshipstatus = $received['relationshipstatus'];
-                                $newUser->livingplace = $received['livingplace'];
-                                $newUser->avatar = $_POST['avatar'];
-                                $newUser->firsttime = 0;
-                                $newUser->save();
+                                $user = null;
+                                if($type == 'ADD') $user = new UserModel();
+                                else $user = UserModel::where('email', $received['email'])->first();
+
+                                $user->uniq_id = $received['uniq_id'];
+                                $user->email = $received['email'];
+                                if($type == 'ADD' || ($type == 'UPDATE' &&  !empty($received['password']) && strlen($received['password']) >= 8))
+                                {
+                                    $user->password = password_hash($received['password'], PASSWORD_BCRYPT);
+                                }
+                                $user->lastname = $received['lastname'];
+                                $user->firstname = $received['firstname'];
+                                $user->rank = $received['rank'];
+                                $user->biography = $received['biography'];
+                                $user->sex = $received['sex'];
+                                $user->job = $received['job'];
+                                $user->birthdate = $received['birthdate'];
+                                $user->birthplace = $received['birthplace'];
+                                $user->relationshipstatus = $received['relationshipstatus'];
+                                $user->livingplace = $received['livingplace'];
+                                $user->avatar = $_POST['avatar'];
+                                $user->firsttime = 0;
+                                $user->save();
 
                                 return json_encode(['success' => true]);
                             } else 
@@ -185,7 +196,7 @@ class User extends Controller
             }
         }else 
         {
-            return $this->forbidden('Veuillez remplir tous les champs !');
+            return $this->forbidden('Veuillez remplir tous les champs ! ');
         }
     }
 

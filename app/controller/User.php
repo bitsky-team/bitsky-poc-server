@@ -109,7 +109,7 @@ class User extends Controller
 
                     if($user['rank'] == 2) {
                         $received = [
-                            "id" => (!empty($_POST['id']) ? htmlspecialchars($_POST['id']) : null),
+                            "user_id" => (!empty($_POST['user_id']) ? htmlspecialchars($_POST['user_id']) : null),
                             "uniq_id" => md5(uniqid()),
                             "lastname" => htmlspecialchars(trim($_POST['lastname'])),
                             "firstname" => htmlspecialchars(trim($_POST['firstname'])),
@@ -143,16 +143,15 @@ class User extends Controller
                         $isRelationshipstatusOk = in_array($received['relationshipstatus'], ['Célibataire', 'En couple', 'Marié(e)', 'Veuf(ve)', 'Non précisé']);
                         $isLivingplaceOk = strlen($received['livingplace']) >= 3;
                         $isFormOk = $isLastnameOk && $isFirstnameOk && $isEmailOk && $isRankOk && $isPasswordOk && $isRepeatPasswordOk && $arePasswordOk && $isBiographyOk && $isSexOk && $isJobOk && $isBirthdateOk && $isBirthplaceOk && $isRelationshipstatusOk && $isLivingplaceOk;
-                        
                         if ($isFormOk)
                         {
                             if((count(UserModel::where('email', $received['email'])->get()) == 0 || $type == 'UPDATE'))
                             {
                                 $user = null;
-                                if($type == 'ADD') $user = new UserModel();
-                                else $user = UserModel::where('id', $received['id'])->first();
                                 
-                                return $this->forbidden(gettype($user));
+                                if($type == 'ADD') $user = new UserModel();
+                                else $user = UserModel::where('id', $received['user_id'])->first();
+                                
                                 $user->uniq_id = $received['uniq_id'];
                                 $user->email = $received['email'];
                                 if($type == 'ADD' || ($type == 'UPDATE' &&  !empty($received['password']) && strlen($received['password']) >= 8))

@@ -1,4 +1,0 @@
-[20:59:22] Niveau 2 => [AUTH] Le token client ne correspond à aucun token serveur. (ID utilisateur: 667b850023ef4472644b5412cf3a66f3)
-[20:59:22] Niveau 2 => [POST] Tentative de récupération des posts avec un token invalide (ID utilisateur: 667b850023ef4472644b5412cf3a66f3)
-[20:59:42] Niveau 2 => [AUTH] L'ID du client (667b850023ef4472644b5412cf3a66f3) ne correspond pas au propriétaire du token 7fcc9d10342de92c9002f8352bf453d0.
-[20:59:42] Niveau 2 => [POST] Tentative de récupération des posts avec un token invalide (ID utilisateur: 667b850023ef4472644b5412cf3a66f3)

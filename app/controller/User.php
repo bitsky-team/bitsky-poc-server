@@ -130,7 +130,7 @@ class User extends Controller
     
                         $isLastnameOk = strlen($received['lastname']) >= 2;
                         $isFirstnameOk = strlen($received['firstname']) >= 2;
-                        $isEmailOk = filter_var($received['email'], FILTER_VALIDATE_EMAIL);
+                        $isEmailOk = preg_match('/^[a-zA-Z]\w+(?:\.[a-zA-Z]\w+){0,3}@[a-zA-Z]\w+(?:\.[a-zA-Z]\w+){1,3}$/', $received['email']);
                         $isRankOk = in_array($received['rank'], $ranks);
                         $isPasswordOk = strlen($received['password']) >= 8 || $type == 'UPDATE';
                         $isRepeatPasswordOk = strlen($received['repeatPassword']) >= 8 || $type == 'UPDATE';

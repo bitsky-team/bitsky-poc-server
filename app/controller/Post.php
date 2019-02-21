@@ -138,7 +138,7 @@
                         if($post != null)
                         {
                             $post->tag = TagModel::where('id', $post->tag_id)->first()->name;
-                            $post->owner = UserModel::where('uniq_id', $post->owner_uniq_id)->first(['firstname', 'lastname', 'rank', 'avatar']);
+                            $post->owner = UserModel::where('uniq_id', $post->owner_uniq_id)->first(['id', 'firstname', 'lastname', 'rank', 'avatar']);
                             unset($post->owner_uniq_id);
                             return json_encode(['success' => true, 'post' => $post]);
                         }else
@@ -188,10 +188,49 @@
                     foreach($posts as $post)
                     {
                         $post->tag = TagModel::where('id', $post->tag_id)->first()->name;
-                        $post->owner = UserModel::where('uniq_id', $post->owner_uniq_id)->first(['firstname', 'lastname', 'rank', 'avatar']);
+                        $post->owner = UserModel::where('uniq_id', $post->owner_uniq_id)->first(['id', 'firstname', 'lastname', 'rank', 'avatar']);
                         unset($post->owner_uniq_id);
                     }
                     
+                    return json_encode(['success' => true, 'posts' => $posts]);
+                }else
+                {
+                    LogManager::store('[POST] Tentative de récupération des posts avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
+        public function getAllOfUser()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['user_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $user_id = htmlspecialchars($_POST['user_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                    $user = UserModel::where('id', $user_id)->first(['id', 'uniq_id', 'firstname', 'lastname', 'rank', 'avatar']);
+
+                    $posts = null;
+                    $posts = PostModel::where('owner_uniq_id', $user->uniq_id)->orderBy('created_at', 'desc')->get();
+
+                    foreach($posts as $post)
+                    {
+                        $post->tag = TagModel::where('id', $post->tag_id)->first()->name;
+
+                        unset($user['uniq_id']);
+                        $post->owner = $user;
+
+                        unset($post->owner_uniq_id);
+                    }
+
                     return json_encode(['success' => true, 'posts' => $posts]);
                 }else
                 {
@@ -427,15 +466,17 @@
                         $post = PostModel::where('tag_id',$tag->id)->orderBy('id', 'desc')->first();
                         $user = UserModel::where('uniq_id', $post->owner_uniq_id)->first();
 
-                        array_push($trends, [
-                            'name' => $tag->name,
-                            'score' => $tag->score,
-                            'post' => [
-                                'id' => $post->id,
-                                'content' => $post->content,
-                                'owner'   => $user->firstname . ' ' . $user->lastname
-                            ]
-                        ]);
+                        if(!empty($user)) {
+                            array_push($trends, [
+                                'name' => $tag->name,
+                                'score' => $tag->score,
+                                'post' => [
+                                    'id' => $post->id,
+                                    'content' => $post->content,
+                                    'owner'   => ['id' => $user->id, 'name' => $user->firstname . ' ' . $user->lastname]
+                                ]
+                            ]);
+                        }
                     }
 
                     return json_encode(['success' => true, 'trends' => $trends]);
@@ -465,7 +506,7 @@
 
                     foreach($comments as $comment)
                     {
-                        $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['firstname', 'lastname', 'avatar']);
+                        $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'avatar']);
                         unset($comment->owner_id);
                     }
                     
@@ -499,7 +540,7 @@
 
                         foreach($comments as $comment)
                         {
-                            $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['firstname', 'lastname', 'rank', 'avatar']);
+                            $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'rank', 'avatar']);
                         }
                         
                         return json_encode(['success' => true, 'comments' => $comments]);
@@ -658,7 +699,7 @@
 
                         foreach($comments as $comment)
                         {
-                            $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['firstname', 'lastname', 'avatar']);
+                            $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'avatar']);
                             unset($comment->owner_id);
                         }
                         

@@ -64,6 +64,7 @@ class User extends Controller
 
                     if($user != null) {
 
+                        unset($user['password']);
                         return json_encode(['success' => true, 'user' => $user]);
 
                     }else {
@@ -81,33 +82,92 @@ class User extends Controller
         }
     }
 
+    public function getFavoritesTrends()
+    {
+        if (!empty($_POST['token']) && !empty($_POST['uniq_id'])) {
+            $token = htmlspecialchars($_POST['token']);
+            $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+            $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+            if ($verify->success) {
+
+                if(!empty($_POST['user_id'])) {
+                    $userId = htmlspecialchars($_POST['user_id']);
+
+                    $user = UserModel::where('id', $userId)->first();
+
+                    if($user != null) {
+                        $posts = PostModel::where('owner_uniq_id', $user->uniq_id)->get();
+                        $trendsCount = [];
+
+                        foreach($posts as $post)
+                        {
+                            $trendID = $post->tag_id;
+                            $alreadyInArray = false;
+
+                            foreach ($trendsCount as $key => $trendCount) {
+                                if($trendCount['id'] == $trendID) {
+                                    $alreadyInArray = true;
+                                    $trendCount['count'] = $trendCount['count'] + 1;
+                                }
+
+                                $trendsCount[$key] = $trendCount;
+                            }
+
+                            if(!$alreadyInArray) {
+                                array_push($trendsCount, ['id' => $trendID, 'count' => 1]);
+                            }
+                        }
+
+                        foreach($trendsCount as $key => $trendCount)
+                        {
+                            $tag = TagModel::where('id', $trendCount['id'])->first();
+                            $trendsCount[$key]['name'] = $tag->name;
+                        }
+
+                        return json_encode(['success' => true, 'favoritesTrends' => $trendsCount]);
+                    }else {
+
+                        return $this->forbidden('notFound');
+                    }
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération de l\'utilisateur avec un token invalide (ID utilisateur: ' . $uniq_id . ')', 2);
+                return $this->forbidden('invalidToken');
+            }
+        } else {
+            return $this->forbidden('noInfos');
+        }
+    }
+
     public function createOrUpdate()
     {
         $type = null; 
 
         if(!empty($_POST['type'])) $type = htmlspecialchars($_POST['type']);
-
+        
         $notEmpty = !empty($_POST['token']) && !empty($_POST['uniq_id']) &&
-                                !empty($_POST['lastname']) && !empty($_POST['firstname']) &&
-                                !empty($_POST['email']) && !empty($_POST['rank']) &&
-                                (!empty($_POST['password']) || $type == 'UPDATE') && 
-                                (!empty($_POST['repeatPassword']) || $type == 'UPDATE') &&
-                                !empty($_POST['biography']) && !empty($_POST['sex']) &&
-                                !empty($_POST['job']) && !empty($_POST['birthdate']) &&
-                                !empty($_POST['birthplace']) && !empty($_POST['relationshipstatus']) &&
-                                !empty($_POST['livingplace']);
+                    !empty($_POST['lastname']) && !empty($_POST['firstname']) &&
+                    !empty($_POST['email']) && !empty($_POST['rank']) &&
+                    (!empty($_POST['password']) || $type == 'UPDATE') &&
+                    (!empty($_POST['repeatPassword']) || $type == 'UPDATE') &&
+                    !empty($_POST['biography']) && !empty($_POST['sex']) &&
+                    !empty($_POST['job']) && !empty($_POST['birthdate']) &&
+                    !empty($_POST['birthplace']) && !empty($_POST['relationshipstatus']) &&
+                    !empty($_POST['livingplace']);
 
         if($notEmpty) {
             if (!empty($_POST['token']) && !empty($_POST['uniq_id'])) {
                 $token = htmlspecialchars($_POST['token']);
                 $uniq_id = htmlspecialchars($_POST['uniq_id']);
-                $user = UserModel::where('uniq_id', $uniq_id)->first();
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
                 if ($verify->success) {
                     $user = UserModel::where('uniq_id', $uniq_id)->first();
 
-                    if($user['rank'] == 2) {
+                    if($user['rank'] == 2 || ($type == 'UPDATE' && $user->id == htmlspecialchars($_POST['user_id']))) {
                         $received = [
                             "user_id" => (!empty($_POST['user_id']) ? htmlspecialchars($_POST['user_id']) : null),
                             "uniq_id" => md5(uniqid()),
@@ -125,7 +185,7 @@ class User extends Controller
                             "relationshipstatus" => htmlspecialchars(trim($_POST['relationshipstatus'])),
                             "livingplace" => htmlspecialchars(trim($_POST['livingplace'])),
                         ];
-    
+
                         $ranks = [1, 2];
     
                         $isLastnameOk = strlen($received['lastname']) >= 2;
@@ -152,8 +212,10 @@ class User extends Controller
                                 if($type == 'ADD') $user = new UserModel();
                                 else $user = UserModel::where('id', $received['user_id'])->first();
                                 
-                                $user->uniq_id = $received['uniq_id'];
+                                if($type == 'ADD') $user->uniq_id = $received['uniq_id'];
+
                                 $user->email = $received['email'];
+
                                 if($type == 'ADD' || ($type == 'UPDATE' &&  !empty($received['password']) && strlen($received['password']) >= 8))
                                 {
                                     $user->password = password_hash($received['password'], PASSWORD_BCRYPT);

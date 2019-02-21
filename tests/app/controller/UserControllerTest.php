@@ -16,7 +16,11 @@
 
             // Get Admin Account
             $admin = UserModel::where('rank', 2)->first();
-            $_POST['token'] = $admin['token'];
+            $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
+            $admin->token = password_hash($token, PASSWORD_BCRYPT);
+            $admin->save();
+
+            $_POST['token'] = $token;
             $_POST['uniq_id'] = $admin['uniq_id'];
 
             // Get All Users
@@ -36,7 +40,11 @@
 
             // Get User Account
             $user = UserModel::where('rank', 1)->first();
-            $_POST['token'] = $user['token'];
+            $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
+            $user->token = password_hash($token, PASSWORD_BCRYPT);
+            $user->save();
+
+            $_POST['token'] = $token;
             $_POST['uniq_id'] = $user['uniq_id'];
 
             // Get All Users
@@ -54,7 +62,11 @@
 
             // Get Admin Account
             $admin = UserModel::where('rank', 2)->first();
-            $_POST['token'] = $admin['token'];
+            $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
+            $admin->token = password_hash($token, PASSWORD_BCRYPT);
+            $admin->save();
+
+            $_POST['token'] = $token;
             $_POST['uniq_id'] = $admin['uniq_id'];
 
             // Preparing data
@@ -75,8 +87,13 @@
 
             // Get Admin Account
             $admin = UserModel::where('rank', 2)->first();
-            $_POST['token'] = $admin['token'];
+            $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
+            $admin->token = password_hash($token, PASSWORD_BCRYPT);
+            $admin->save();
+
+            $_POST['token'] = $token;
             $_POST['uniq_id'] = $admin['uniq_id'];
+            $_POST['type'] = 'ADD';
 
             // Preparing data
             $_POST['lastname'] = 'lastname';
@@ -95,9 +112,9 @@
             $_POST['avatar'] = 'no';
 
             // Get Result
-            $result = $userController->create();
+            $result = $userController->createOrUpdate();
             $result = json_decode($result, true);
-           
+            
             // Check the results
             $this->assertTrue($result['success']);
         }
@@ -109,8 +126,13 @@
 
             // Get User Account
             $user = UserModel::where('rank', 1)->first();
-            $_POST['token'] = $user['token'];
+            $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
+            $user->token = password_hash($token, PASSWORD_BCRYPT);
+            $user->save();
+
+            $_POST['token'] = $token;
             $_POST['uniq_id'] = $user['uniq_id'];
+            $_POST['type'] = 'ADD';
 
             // Preparing data
             $_POST['lastname'] = 'lastname';
@@ -129,7 +151,7 @@
             $_POST['avatar'] = 'no';
 
             // Get Result
-            $result = $userController->create();
+            $result = $userController->createOrUpdate();
             $result = json_decode($result, true);
            
             // Check the results
@@ -143,7 +165,11 @@
 
             // Get Admin Account
             $admin = UserModel::where('rank', 2)->first();
-            $_POST['token'] = $admin['token'];
+            $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
+            $admin->token = password_hash($token, PASSWORD_BCRYPT);
+            $admin->save();
+
+            $_POST['token'] = $token;
             $_POST['uniq_id'] = $admin['uniq_id'];
 
             // Preparing data
@@ -163,7 +189,11 @@
 
             // Get Admin Account
             $admin = UserModel::where('rank', 2)->first();
-            $_POST['token'] = $admin['token'];
+            $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
+            $admin->token = password_hash($token, PASSWORD_BCRYPT);
+            $admin->save();
+
+            $_POST['token'] = $token;
             $_POST['uniq_id'] = $admin['uniq_id'];
 
             // Preparing data

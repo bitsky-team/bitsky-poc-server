@@ -147,7 +147,7 @@ class User extends Controller
         $type = null; 
 
         if(!empty($_POST['type'])) $type = htmlspecialchars($_POST['type']);
-        
+
         $notEmpty = !empty($_POST['token']) && !empty($_POST['uniq_id']) &&
                     !empty($_POST['lastname']) && !empty($_POST['firstname']) &&
                     !empty($_POST['email']) && !empty($_POST['rank']) &&
@@ -275,15 +275,15 @@ class User extends Controller
             if ($verify->success)
             {
                 $me = UserModel::where('uniq_id', $uniq_id)->first();
-                if($me['rank'] == 2)
+                $id = htmlspecialchars($_POST['user_id']);
+
+                if($me['rank'] == 2 || $me['id'] == $id)
                 {
-                    $id = htmlspecialchars($_POST['user_id']);
                     $user = UserModel::where('id', $id)->first();
                     $posts = PostModel::where('owner_uniq_id', $user['uniq_id']);
                     $postFavorites = PostFavoriteModel::where('user_uniq_id', $user['uniq_id']);
                     $postComments = PostCommentModel::where('owner_id', $user['uniq_id']);
                     $postCommentFavorites = PostCommentFavoriteModel::where('user_uniq_id', $user['uniq_id']);
-
                     if($user['rank'] == 2)
                     {
                         if($user['uniq_id'] == $me['uniq_id'])

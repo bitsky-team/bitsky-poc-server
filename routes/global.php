@@ -40,4 +40,7 @@ return [
     [   'POST',      '/get_user',                           'user',          'getById'                      ],
 
     [   'GET',       '/get_ranks',                          'rank',          'getAll'                       ],
+
+    [   'GET',       '/get_registration_module_state',      'module',        'getRegistrationState'         ],
+    [   'POST',      '/toggle_registration_module_state',   'module',        'toggleRegistrationState'      ],
 ];

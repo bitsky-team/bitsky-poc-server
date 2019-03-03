@@ -1,9 +1,10 @@
 <?php
 
 return [
-    #   Type         Name                                 Controller       Method 
+    #   Type         Name                                   Controller       Method
     [   'POST',      '/get_temp',                           'hardware',      'getTemp'                      ],
     [   'POST',      '/get_cpu',                            'hardware',      'getCPUUsage'                  ],
+    [   'POST',      '/get_key',                            'hardware',      'getLinkingKey'                ],
 
     [   'POST',      '/login',                              'auth',          'login'                        ],
     [   'POST',      '/register',                           'auth',          'register'                     ],

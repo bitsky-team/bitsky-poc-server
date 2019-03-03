@@ -4,14 +4,20 @@
 
     use \Controller\Auth;
     use \Kernel\LogManager;
+    use \Kernel\RemoteAddress;
     use \Model\User as UserModel;
     use \Model\Link as LinkModel;
 
+    /**
+     * @property RemoteAddress remoteAddress
+     * @property \Controller\Auth authService
+     */
     class Link extends Controller
     {
         public function __construct()
         {
             $this->authService = new Auth();
+            $this->remoteAddress = new RemoteAddress();
         }
 
         public function getLinkingKey()
@@ -95,6 +101,36 @@
                 {
                     LogManager::store('[POST] Tentative de création de liaison avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
                     return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
+        public function activeLink()
+        {
+            if(!empty($_POST['bitsky_key']))
+            {
+                $key = htmlspecialchars($_POST['bitsky_key']);
+
+                $link = LinkModel::where('bitsky_key', $key)->first();
+
+                if(!empty($link))
+                {
+                    if($this->remoteAddress->getIpAddress() == '149.91.80.202')
+                    {
+                        $link->active = 1;
+                        $link->save();
+
+                        return json_encode(['success' => true, 'link' => $link]);
+                    }else
+                    {
+                        return $this->forbidden();
+                    }
+                } else
+                {
+                    return $this->forbidden('doesntExist');
                 }
             }else
             {

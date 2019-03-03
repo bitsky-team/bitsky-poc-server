@@ -4,7 +4,9 @@ return [
     #   Type         Name                                   Controller       Method
     [   'POST',      '/get_temp',                           'hardware',      'getTemp'                      ],
     [   'POST',      '/get_cpu',                            'hardware',      'getCPUUsage'                  ],
-    [   'POST',      '/get_key',                            'hardware',      'getLinkingKey'                ],
+
+    [   'POST',      '/get_key',                            'link',          'getLinkingKey'                ],
+    [   'POST',      '/create_link',                        'link',          'createLink'                   ],
 
     [   'POST',      '/login',                              'auth',          'login'                        ],
     [   'POST',      '/register',                           'auth',          'register'                     ],

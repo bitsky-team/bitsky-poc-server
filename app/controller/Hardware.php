@@ -93,37 +93,4 @@ class Hardware extends Controller
             return $this->forbidden('noInfos');
         }
     }
-
-    public function getLinkingKey()
-    {
-        if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
-        {
-            $token = htmlspecialchars($_POST['token']);
-            $uniq_id = htmlspecialchars($_POST['uniq_id']);
-
-            $verify = json_decode($this->authService->verify($token, $uniq_id));
-
-            if($verify->success)
-            {
-                $user = UserModel::where('uniq_id', $uniq_id)->first();
-
-                if($user['rank'] == 2)
-                {
-                    $linkingKey = getenv('LINKING_KEY');
-                    return json_encode(['success' => true, 'key' => $linkingKey]);
-                }else
-                {
-                    LogManager::store('[POST] Tentative de récupération du CPU avec un rang trop bas (ID utilisateur: '.$uniq_id.')', 2);
-                    return $this->forbidden('forbidden');
-                }
-            }else
-            {
-                LogManager::store('[POST] Tentative de récupération du CPU avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
-                return $this->forbidden('invalidToken');
-            }
-        }else
-        {
-            return $this->forbidden('noInfos');
-        }
-    }
 }

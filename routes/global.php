@@ -8,6 +8,7 @@ return [
     [   'POST',      '/get_key',                            'link',          'getLinkingKey'                ],
     [   'POST',      '/create_link',                        'link',          'createLink'                   ],
     [   'POST',      '/active_link',                        'link',          'activeLink'                   ],
+    [   'POST',      '/get_active_links',                   'link',          'getActiveLinks'               ],
 
     [   'POST',      '/login',                              'auth',          'login'                        ],
     [   'POST',      '/register',                           'auth',          'register'                     ],

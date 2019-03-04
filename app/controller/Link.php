@@ -137,4 +137,37 @@
                 return $this->forbidden('noInfos');
             }
         }
+
+        public function getActiveLinks()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                    $user = UserModel::where('uniq_id', $uniq_id)->first();
+
+                    if($user['rank'] == 2)
+                    {
+                        $links = LinkModel::where('active', 1)->get();
+                        return json_encode(['success' => true, 'key' => $links]);
+                    }else
+                    {
+                        LogManager::store('[POST] Tentative de récupération des liaisons avec un rang trop bas (ID utilisateur: '.$uniq_id.')', 2);
+                        return $this->forbidden('forbidden');
+                    }
+                }else
+                {
+                    LogManager::store('[POST] Tentative de récupération des liaisons avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
     }

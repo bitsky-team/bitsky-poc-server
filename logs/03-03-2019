@@ -1,2 +1,5 @@
 [11:55:25] Niveau 2 => [AUTH] Détection d'un token invalide. (ID utilisateur: 08e8dccae3fc1e8418f20dd9570c7dea)
 [16:45:01] Niveau 2 => [AUTH] Détection d'un token invalide. (ID utilisateur: 08e8dccae3fc1e8418f20dd9570c7dea)
+[21:09:04] Niveau 2 => [AUTH] Le token client ne correspond à aucun uniq_id du serveur. (ID utilisateur: 08e8dccae3fc1e8418f20dd9570c7dea)
+[21:09:04] Niveau 2 => [AUTH] Le token client ne correspond à aucun uniq_id du serveur. (ID utilisateur: 08e8dccae3fc1e8418f20dd9570c7dea)
+[21:09:04] Niveau 2 => [POST] Tentative de récupération des utilisateurs avec un token invalide (ID utilisateur: 08e8dccae3fc1e8418f20dd9570c7dea)

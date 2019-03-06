@@ -170,4 +170,55 @@
                 return $this->forbidden('noInfos');
             }
         }
+
+        public function deleteLink()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['bitsky_key']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $key = htmlspecialchars($_POST['bitsky_key']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                    $user = UserModel::where('uniq_id', $uniq_id)->first();
+
+                    if($user['rank'] == 2)
+                    {
+                        $link = LinkModel::where('bitsky_key', $key)->first();
+                        $link->delete();
+                        return json_encode(['success' => true]);
+                    }else
+                    {
+                        LogManager::store('[POST] Tentative de suppression d\'une liaison avec un rang trop bas (ID utilisateur: '.$uniq_id.')', 2);
+                        return $this->forbidden('forbidden');
+                    }
+                }else
+                {
+                    LogManager::store('[POST] Tentative de suppression d\'une liaison avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
+        public function deleteLinkIntermediary()
+        {
+            if(!empty($_POST['bitsky_key']) && $this->remoteAddress->getIpAddress() == '149.91.80.202')
+            {
+                $key = htmlspecialchars($_POST['bitsky_key']);
+
+                $link = LinkModel::where('bitsky_key', $key)->first();
+                $link->delete();
+
+                return json_encode(['success' => true]);
+            }else
+            {
+                return $this->forbidden('notAuthorized');
+            }
+        }
     }

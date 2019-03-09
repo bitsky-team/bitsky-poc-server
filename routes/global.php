@@ -50,4 +50,6 @@ return [
 
     [   'GET',       '/get_registration_module_state',      'module',        'getRegistrationState'         ],
     [   'POST',      '/toggle_registration_module_state',   'module',        'toggleRegistrationState'      ],
+
+    [   'POST',      '/get_logs',                           'log',           'get'                          ],
 ];

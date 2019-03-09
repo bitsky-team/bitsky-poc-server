@@ -1,9 +1,16 @@
 <?php
 
 return [
-    #   Type         Name                                 Controller       Method 
+    #   Type         Name                                   Controller       Method
     [   'POST',      '/get_temp',                           'hardware',      'getTemp'                      ],
     [   'POST',      '/get_cpu',                            'hardware',      'getCPUUsage'                  ],
+
+    [   'POST',      '/get_key',                            'link',          'getLinkingKey'                ],
+    [   'POST',      '/create_link',                        'link',          'createLink'                   ],
+    [   'POST',      '/active_link',                        'link',          'activeLink'                   ],
+    [   'POST',      '/get_active_links',                   'link',          'getActiveLinks'               ],
+    [   'POST',      '/delete_link',                        'link',          'deleteLink'                   ],
+    [   'POST',      '/delete_link_intermediary',           'link',          'deleteLinkIntermediary'       ],
 
     [   'POST',      '/login',                              'auth',          'login'                        ],
     [   'POST',      '/register',                           'auth',          'register'                     ],

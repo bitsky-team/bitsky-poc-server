@@ -4,7 +4,6 @@
 
     use \Kernel\JWT;
     use \Kernel\LogManager;
-    use \Kernel\RemoteAddress;
     use \Controller\Auth;
     use \Model\Post as PostModel;
     use \Model\PostFavorite as PostFavoriteModel;
@@ -12,14 +11,12 @@
     use \Model\User as UserModel;
     use \Model\PostComment as PostCommentModel;
     use \Model\PostCommentFavorite as PostCommentFavoriteModel;
-    use \Model\Link as LinkModel;
 
     class Post extends Controller
     {
         public function __construct()
         {
             $this->authService = new Auth();
-            $this->remoteAddress = new RemoteAddress();
         }
 
         public function store()
@@ -164,31 +161,12 @@
 
         public function getAll() 
         {
-            $links = $this->callAPI(
-                'POST',
-                'https://bitsky.be/getActiveLinks',
-                [
-                    'bitsky_key' => getenv('LINKING_KEY')
-                ]
-            );
-
-            $links = json_decode($links, true);
-            $linksIP = [];
-
-            if($links['success']) {
-                $links = $links['data'];
-
-                foreach($links as $link) {
-                    array_push($linksIP, $link['foreign_ip']);
-                }
-            }
-
-            $authorizedForeign = in_array($this->remoteAddress->getIpAddress(), $linksIP);
+            $authorizedForeign = $this->isAuthorizedForeign();
 
             if((!empty($_POST['token']) && !empty($_POST['uniq_id'])) || $authorizedForeign)
             {
                 $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
-                $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'link-with-' . $this->remoteAddress->getIpAddress();
+                $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'linkedDevice';
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
@@ -706,14 +684,16 @@
 
         public function getBestComments()
         {
-            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            $authorizedForeign = $this->isAuthorizedForeign();
+
+            if((!empty($_POST['token']) && !empty($_POST['uniq_id'])) || $authorizedForeign)
             {
-                $token = htmlspecialchars($_POST['token']);
-                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
+                $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'linkedDevice';
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     if(!empty($_POST['post_id']))
                     {

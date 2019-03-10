@@ -2,6 +2,8 @@
 
     namespace Controller;
 
+    use Kernel\RemoteAddress;
+
     /**
      * RestPHP's abstract controller
      * 
@@ -58,5 +60,31 @@
             curl_close($curl);
 
             return $result;
+        }
+
+        public function isAuthorizedForeign()
+        {
+            $remoteAddress = new RemoteAddress();
+
+            $links = $this->callAPI(
+                'POST',
+                'https://bitsky.be/getActiveLinks',
+                [
+                    'bitsky_key' => getenv('LINKING_KEY')
+                ]
+            );
+
+            $links = json_decode($links, true);
+            $linksIP = [];
+
+            if($links['success']) {
+                $links = $links['data'];
+
+                foreach($links as $link) {
+                    array_push($linksIP, $link['foreign_ip']);
+                }
+            }
+
+            return in_array($remoteAddress->getIpAddress(), $linksIP);
         }
     }

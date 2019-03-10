@@ -1,9 +1,10 @@
 <?php
 
     namespace Controller;
-    
+
     use \Kernel\JWT;
     use \Kernel\LogManager;
+    use \Kernel\RemoteAddress;
     use \Controller\Auth;
     use \Model\Post as PostModel;
     use \Model\PostFavorite as PostFavoriteModel;
@@ -11,13 +12,14 @@
     use \Model\User as UserModel;
     use \Model\PostComment as PostCommentModel;
     use \Model\PostCommentFavorite as PostCommentFavoriteModel;
-
+    use \Model\Link as LinkModel;
 
     class Post extends Controller
     {
         public function __construct()
         {
             $this->authService = new Auth();
+            $this->remoteAddress = new RemoteAddress();
         }
 
         public function store()
@@ -162,12 +164,33 @@
 
         public function getAll() 
         {
-            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
-            {
-                $token = htmlspecialchars($_POST['token']);
-                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+            $links = $this->callAPI(
+                'POST',
+                'https://bitsky.be/getActiveLinks',
+                [
+                    'bitsky_key' => getenv('LINKING_KEY')
+                ]
+            );
 
-                $verify = json_decode($this->authService->verify($token, $uniq_id));
+            $links = json_decode($links, true);
+            $linksIP = [];
+
+            if($links['success']) {
+                $links = $links['data'];
+
+                foreach($links as $link) {
+                    array_push($linksIP, $link['foreign_ip']);
+                }
+            }
+
+            $authorizedForeign = in_array($this->remoteAddress->getIpAddress(), $linksIP);
+
+            if((!empty($_POST['token']) && !empty($_POST['uniq_id'])) || $authorizedForeign)
+            {
+                $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
+                $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'link-with-' . $this->remoteAddress->getIpAddress();
+
+                $verify = $authorizedForeign ? $authorizedForeign : json_decode($this->authService->verify($token, $uniq_id));
 
                 if($verify->success)
                 {
@@ -191,7 +214,7 @@
                         $post->owner = UserModel::where('uniq_id', $post->owner_uniq_id)->first(['id', 'firstname', 'lastname', 'rank', 'avatar']);
                         unset($post->owner_uniq_id);
                     }
-                    
+
                     return json_encode(['success' => true, 'posts' => $posts]);
                 }else
                 {

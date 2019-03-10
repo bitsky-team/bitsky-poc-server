@@ -8,6 +8,7 @@ return [
     [   'POST',      '/get_key',                            'link',          'getLinkingKey'                ],
     [   'POST',      '/create_link',                        'link',          'createLink'                   ],
     [   'POST',      '/active_link',                        'link',          'activeLink'                   ],
+    [   'POST',      '/get_link',                           'link',          'getLink'                      ],
     [   'POST',      '/get_active_links',                   'link',          'getActiveLinks'               ],
     [   'POST',      '/delete_link',                        'link',          'deleteLink'                   ],
     [   'POST',      '/delete_link_intermediary',           'link',          'deleteLinkIntermediary'       ],
@@ -50,6 +51,4 @@ return [
 
     [   'GET',       '/get_registration_module_state',      'module',        'getRegistrationState'         ],
     [   'POST',      '/toggle_registration_module_state',   'module',        'toggleRegistrationState'      ],
-
-    [   'POST',      '/get_logs',                           'log',           'get'                          ],
 ];

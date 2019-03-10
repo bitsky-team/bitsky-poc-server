@@ -190,9 +190,9 @@
                 $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
                 $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'link-with-' . $this->remoteAddress->getIpAddress();
 
-                $verify = $authorizedForeign ? $authorizedForeign : json_decode($this->authService->verify($token, $uniq_id));
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     $tagName = (!empty($_POST['trend'])) ? htmlspecialchars($_POST['trend']) : null;
 

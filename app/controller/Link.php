@@ -171,6 +171,31 @@
             }
         }
 
+        public function getLink()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['bitsky_key']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $key = htmlspecialchars($_POST['bitsky_key']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                    $link = LinkModel::where('bitsky_key', $key)->first();
+                    return json_encode(['success' => true, 'link' => $link]);
+                }else
+                {
+                    LogManager::store('[POST] Tentative de récupération d\'une liaison avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
         public function deleteLink()
         {
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['bitsky_key']))

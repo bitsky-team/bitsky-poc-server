@@ -11,7 +11,7 @@ class Log extends Controller
     public function __construct()
     {
         $this->authService = new Auth();
-    }
+    } 
 
     public function get()
     {
@@ -38,9 +38,11 @@ class Log extends Controller
                             $lines = explode("\n", $file_content);
 
                             foreach($lines as $line) {
-                                $line = ltrim($line, '[');
-                                $line = "[" . $file . " " . $line;
-                                array_push($lines_content, $line);
+                                if(!empty($line)) {
+                                    $line = ltrim($line, '[');
+                                    $line = "[" . $file . " " . $line;
+                                    array_push($lines_content, $line);
+                                }
                             }
                         }
                     }

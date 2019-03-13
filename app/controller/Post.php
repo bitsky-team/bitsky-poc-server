@@ -1,7 +1,7 @@
 <?php
 
     namespace Controller;
-    
+
     use \Kernel\JWT;
     use \Kernel\LogManager;
     use \Controller\Auth;
@@ -11,7 +11,6 @@
     use \Model\User as UserModel;
     use \Model\PostComment as PostCommentModel;
     use \Model\PostCommentFavorite as PostCommentFavoriteModel;
-
 
     class Post extends Controller
     {
@@ -162,14 +161,16 @@
 
         public function getAll() 
         {
-            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            $authorizedForeign = $this->isAuthorizedForeign();
+
+            if((!empty($_POST['token']) && !empty($_POST['uniq_id'])) || $authorizedForeign)
             {
-                $token = htmlspecialchars($_POST['token']);
-                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
+                $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'linkedDevice';
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     $tagName = (!empty($_POST['trend'])) ? htmlspecialchars($_POST['trend']) : null;
 
@@ -191,7 +192,7 @@
                         $post->owner = UserModel::where('uniq_id', $post->owner_uniq_id)->first(['id', 'firstname', 'lastname', 'rank', 'avatar']);
                         unset($post->owner_uniq_id);
                     }
-                    
+
                     return json_encode(['success' => true, 'posts' => $posts]);
                 }else
                 {
@@ -683,14 +684,16 @@
 
         public function getBestComments()
         {
-            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            $authorizedForeign = $this->isAuthorizedForeign();
+
+            if((!empty($_POST['token']) && !empty($_POST['uniq_id'])) || $authorizedForeign)
             {
-                $token = htmlspecialchars($_POST['token']);
-                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
+                $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'linkedDevice';
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     if(!empty($_POST['post_id']))
                     {

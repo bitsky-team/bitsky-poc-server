@@ -82,6 +82,41 @@ class User extends Controller
         }
     }
 
+    public function getByUniqId()
+    {
+        if (!empty($_POST['token']) && !empty($_POST['uniq_id'])) {
+            $token = htmlspecialchars($_POST['token']);
+            $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+            $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+            if ($verify->success) {
+
+                if(!empty($_POST['user_uniq_id'])) {
+                    $userUniqId = htmlspecialchars($_POST['user_uniq_id']);
+
+                    $user = UserModel::where('uniq_id', $userUniqId)->first();
+
+                    if($user != null) {
+
+                        unset($user['password']);
+                        return json_encode(['success' => true, 'user' => $user]);
+
+                    }else {
+
+                        return $this->forbidden('notFound');
+                    }
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération de l\'utilisateur avec un token invalide (ID utilisateur: ' . $uniq_id . ')', 2);
+                return $this->forbidden('invalidToken');
+            }
+        } else {
+            return $this->forbidden('noInfos');
+        }
+    }
+
     public function getFavoritesTrends()
     {
         if (!empty($_POST['token']) && !empty($_POST['uniq_id'])) {

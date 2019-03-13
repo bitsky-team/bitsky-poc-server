@@ -8,6 +8,7 @@ return [
     [   'POST',      '/get_key',                            'link',          'getLinkingKey'                ],
     [   'POST',      '/create_link',                        'link',          'createLink'                   ],
     [   'POST',      '/active_link',                        'link',          'activeLink'                   ],
+    [   'POST',      '/get_link',                           'link',          'getLink'                      ],
     [   'POST',      '/get_active_links',                   'link',          'getActiveLinks'               ],
     [   'POST',      '/delete_link',                        'link',          'deleteLink'                   ],
     [   'POST',      '/delete_link_intermediary',           'link',          'deleteLinkIntermediary'       ],
@@ -45,6 +46,7 @@ return [
     [   'POST',      '/delete_user',                        'user',          'delete'                       ],                
     [   'POST',      '/get_allusers',                       'user',          'getAll'                       ],
     [   'POST',      '/get_user',                           'user',          'getById'                      ],
+    [   'POST',      '/get_user_by_uniq_id',                'user',          'getByUniqId'                  ],
 
     [   'GET',       '/get_ranks',                          'rank',          'getAll'                       ],
 

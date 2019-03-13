@@ -1,3 +1,0 @@
-[17:15:52] Niveau 2 => [AUTH] Le token du client (72ed244efe8b16806d33412674dee9b4) ne correspond pas à celui de la DB de 72ed244efe8b16806d33412674dee9b4.
-[17:32:32] Niveau 2 => [AUTH] Le token du client (7fcc9d10342de92c9002f8352bf453d0) ne correspond pas à celui de la DB de 7fcc9d10342de92c9002f8352bf453d0.
-[17:32:32] Niveau 2 => [POST] Tentative de récupération du score d'un post avec un token invalide (ID utilisateur: 7fcc9d10342de92c9002f8352bf453d0)

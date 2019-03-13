@@ -46,9 +46,12 @@ return [
     [   'POST',      '/delete_user',                        'user',          'delete'                       ],                
     [   'POST',      '/get_allusers',                       'user',          'getAll'                       ],
     [   'POST',      '/get_user',                           'user',          'getById'                      ],
+    [   'POST',      '/get_user_by_uniq_id',                'user',          'getByUniqId'                  ],
 
     [   'GET',       '/get_ranks',                          'rank',          'getAll'                       ],
 
     [   'GET',       '/get_registration_module_state',      'module',        'getRegistrationState'         ],
     [   'POST',      '/toggle_registration_module_state',   'module',        'toggleRegistrationState'      ],
+
+    [   'POST',      '/get_logs',                           'log',           'get'                          ],
 ];

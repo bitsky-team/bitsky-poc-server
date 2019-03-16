@@ -1,10 +1,8 @@
 <?php
-
 return [
     #   Type         Name                                   Controller       Method
     [   'POST',      '/get_temp',                           'hardware',      'getTemp'                      ],
     [   'POST',      '/get_cpu',                            'hardware',      'getCPUUsage'                  ],
-
     [   'POST',      '/get_key',                            'link',          'getLinkingKey'                ],
     [   'POST',      '/create_link',                        'link',          'createLink'                   ],
     [   'POST',      '/active_link',                        'link',          'activeLink'                   ],
@@ -12,14 +10,12 @@ return [
     [   'POST',      '/get_active_links',                   'link',          'getActiveLinks'               ],
     [   'POST',      '/delete_link',                        'link',          'deleteLink'                   ],
     [   'POST',      '/delete_link_intermediary',           'link',          'deleteLinkIntermediary'       ],
-
     [   'POST',      '/login',                              'auth',          'login'                        ],
     [   'POST',      '/register',                           'auth',          'register'                     ],
     [   'POST',      '/change_password',                    'auth',          'changePassword'               ],
     [   'POST',      '/auth_verify',                        'auth',          'verify'                       ],
     [   'POST',      '/register_confirmation',              'auth',          'checkRegisterConfirmation'    ],
     [   'POST',      '/get_firsttime',                      'auth',          'getFirstTime'                 ],
-
     [   'POST',      '/store_post',                         'post',          'store'                        ],
     [   'POST',      '/remove_post',                        'post',          'remove'                       ],
     [   'POST',      '/post_add_favorite',                  'post',          'addFavorite'                  ],
@@ -27,6 +23,7 @@ return [
     [   'POST',      '/post_get_user_favorite',             'post',          'getFavoriteOfUser'            ],
     [   'POST',      '/get_post',                           'post',          'get'                          ],
     [   'POST',      '/get_post_score',                     'post',          'getScore'                     ],
+    [   'POST',      '/get_localposts',                     'post',          'getLocalPosts'                ],
     [   'POST',      '/get_allposts',                       'post',          'getAll'                       ],
     [   'POST',      '/get_allpostsofuser',                 'post',          'getAllOfUser'                 ],
     [   'POST',      '/get_trends',                         'post',          'getTrends'                    ],
@@ -40,18 +37,14 @@ return [
     [   'POST',      '/post_get_user_comment_favorite',     'post',          'getCommentFavoriteOfUser'     ],
     [   'POST',      '/post_add_comment_favorite',          'post',          'addCommentFavorite'           ],
     [   'POST',      '/post_remove_comment_favorite',       'post',          'removeCommentFavorite'        ],
-
     [   'POST',      '/create_user',                        'user',          'createOrUpdate'               ],
     [   'POST',      '/update_user',                        'user',          'createOrUpdate'               ],
-    [   'POST',      '/delete_user',                        'user',          'delete'                       ],                
+    [   'POST',      '/delete_user',                        'user',          'delete'                       ],
     [   'POST',      '/get_allusers',                       'user',          'getAll'                       ],
     [   'POST',      '/get_user',                           'user',          'getById'                      ],
     [   'POST',      '/get_user_by_uniq_id',                'user',          'getByUniqId'                  ],
-
     [   'GET',       '/get_ranks',                          'rank',          'getAll'                       ],
-
     [   'GET',       '/get_registration_module_state',      'module',        'getRegistrationState'         ],
     [   'POST',      '/toggle_registration_module_state',   'module',        'toggleRegistrationState'      ],
-
     [   'POST',      '/get_logs',                           'log',           'get'                          ],
 ];

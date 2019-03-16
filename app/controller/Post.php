@@ -159,7 +159,7 @@
             }
         }
 
-        public function getAll() 
+        public function getLocalPosts()
         {
             $authorizedForeign = $this->isAuthorizedForeign();
 
@@ -183,7 +183,13 @@
                     {
                         $tag = TagModel::where('name', $tagName)->first();
 
-                        $posts = PostModel::where('tag_id', $tag->id)->orderBy('created_at', 'desc')->get();
+                        if(!empty($tag))
+                        {
+                            $posts = PostModel::where('tag_id', $tag->id)->orderBy('created_at', 'desc')->get();
+                        } else
+                        {
+                            $posts = [];
+                        }
                     }
 
                     foreach($posts as $post)
@@ -194,6 +200,72 @@
                     }
 
                     return json_encode(['success' => true, 'posts' => $posts]);
+                }else
+                {
+                    LogManager::store('[POST] Tentative de récupération des posts avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
+        public function getAll() 
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                    $posts = [];
+
+                    $localPosts = json_decode($this->getLocalPosts(), true);
+
+                    if($localPosts['success'])
+                    {
+                        $posts = $localPosts['posts'];
+                    }
+
+                    $links = $this->callAPI(
+                        'POST',
+                        'https://bitsky.be/getActiveLinks',
+                        [
+                            'bitsky_key' => getenv('LINKING_KEY')
+                        ]
+                    );
+
+                    $links = json_decode($links, true);
+
+                    if($links['success'])
+                    {
+                        foreach($links['data'] as $link)
+                        {
+                            $linkPosts = $this->callAPI(
+                                'POST',
+                                'http://' . $link['foreign_ip'] . '/get_allposts',
+                                [
+                                    'trend' => !empty($_POST['trend']) ? htmlspecialchars($_POST['trend']) : null
+                                ]
+                            );
+
+                            $linkPosts = json_decode($linkPosts, true);
+
+                            if($linkPosts['success'])
+                            {
+                                foreach($linkPosts['posts'] as $linkPost)
+                                {
+                                    $linkPost['from_stranger'] = $link['foreign_ip'];
+                                    array_push($posts, $linkPost);
+                                }
+                            }
+                        }
+                        return json_encode(['success' => true, 'posts' => $posts]);
+                    }
                 }else
                 {
                     LogManager::store('[POST] Tentative de récupération des posts avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);

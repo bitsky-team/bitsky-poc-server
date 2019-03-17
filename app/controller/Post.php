@@ -159,7 +159,7 @@
             }
         }
 
-        public function getAll() 
+        public function getLocalPosts()
         {
             $authorizedForeign = $this->isAuthorizedForeign();
 
@@ -183,7 +183,13 @@
                     {
                         $tag = TagModel::where('name', $tagName)->first();
 
-                        $posts = PostModel::where('tag_id', $tag->id)->orderBy('created_at', 'desc')->get();
+                        if(!empty($tag))
+                        {
+                            $posts = PostModel::where('tag_id', $tag->id)->orderBy('created_at', 'desc')->get();
+                        } else
+                        {
+                            $posts = [];
+                        }
                     }
 
                     foreach($posts as $post)
@@ -199,6 +205,72 @@
                     LogManager::store('[POST] Tentative de récupération des posts avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
                     return $this->forbidden('invalidToken');
                 }
+            } else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
+        public function getAll() 
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                    $posts = [];
+
+                    $localPosts = json_decode($this->getLocalPosts(), true);
+
+                    if($localPosts['success'])
+                    {
+                        $posts = $localPosts['posts'];
+                    }
+
+                    $links = $this->callAPI(
+                        'POST',
+                        'https://bitsky.be/getActiveLinks',
+                        [
+                            'bitsky_key' => getenv('LINKING_KEY')
+                        ]
+                    );
+
+                    $links = json_decode($links, true);
+
+                    if($links['success'])
+                    {
+                        foreach($links['data'] as $link)
+                        {
+                            $linkPosts = $this->callAPI(
+                                'POST',
+                                'http://' . $link['foreign_ip'] . '/get_localposts',
+                                [
+                                    'trend' => !empty($_POST['trend']) ? htmlspecialchars($_POST['trend']) : null
+                                ]
+                            );
+
+                            $linkPosts = json_decode($linkPosts, true);
+
+                            if($linkPosts['success'])
+                            {
+                                foreach($linkPosts['posts'] as $linkPost)
+                                {
+                                    $linkPost['from_stranger'] = $link['foreign_ip'];
+                                    array_push($posts, $linkPost);
+                                }
+                            }
+                        }
+                        return json_encode(['success' => true, 'posts' => $posts]);
+                    }
+                }else
+                {
+                    LogManager::store('[POST] Tentative de récupération des posts avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
             }else
             {
                 return $this->forbidden('noInfos');
@@ -207,15 +279,17 @@
 
         public function getAllOfUser()
         {
-            if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['user_id']))
+            $authorizedForeign = $this->isAuthorizedForeign();
+
+            if((!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['user_id'])) || ($authorizedForeign && !empty($_POST['user_id'])))
             {
-                $token = htmlspecialchars($_POST['token']);
-                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
+                $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'linkedDevice';
                 $user_id = htmlspecialchars($_POST['user_id']);
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     $user = UserModel::where('id', $user_id)->first(['id', 'uniq_id', 'firstname', 'lastname', 'rank', 'avatar']);
 
@@ -229,6 +303,10 @@
                         unset($user['uniq_id']);
                         $post->owner = $user;
 
+                        if($authorizedForeign) {
+                            $post->fromStranger = true;
+                        }
+
                         unset($post->owner_uniq_id);
                     }
 
@@ -240,6 +318,72 @@
                 }
             }else
             {
+                return $this->forbidden('noInfos');
+            }
+        }
+
+        public function getAllOfStrangerUser()
+        {
+            if(!empty($_POST['uniq_id']) && !empty($_POST['bitsky_ip']) && !empty($_POST['user_id']))
+            {
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
+                $user_id = htmlspecialchars($_POST['user_id']);
+
+                $links = $this->callAPI(
+                    'POST',
+                    'https://bitsky.be/getActiveLinks',
+                    [
+                        'bitsky_key' => getenv('LINKING_KEY')
+                    ]
+                );
+
+                $links = json_decode($links, true);
+                $correctStranger = false;
+
+                if($links['success'])
+                {
+                    foreach ($links['data'] as $link)
+                    {
+                        if($bitsky_ip == $link['foreign_ip'])
+                        {
+                            $correctStranger = true;
+                        }
+                    }
+
+                    if($correctStranger)
+                    {
+                        $response = $this->callAPI(
+                            'POST',
+                            'http://' . $link['foreign_ip'] . '/get_allpostsofuser',
+                            [
+                                'user_id' => $user_id
+                            ]
+                        );
+
+                        $response = json_decode($response, true);
+
+                        if($response['success'])
+                        {
+                            return json_encode(['success' => true, 'posts' => $response['posts']]);
+                        } else
+                        {
+                            $response['stranger'] = true;
+                            return json_encode($response);
+                        }
+                    } else
+                    {
+                        LogManager::store('[POST] Tentative de communication avec un bitsky non autorisé (ID utilisateur: ' . $uniq_id . ')', 2);
+                        return $this->forbidden('intermediaryNotReachable');
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Impossible de récupérer les posts d\'un utilisateur (ID utilisateur: ' . $uniq_id . ')', 2);
+                    return $this->forbidden('intermediaryNotReachable');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération des posts d\'un utilisateur de liaison sans fournir les paramètres (ID utilisateur: ' . $_POST['uniq_id'] . ')', 2);
                 return $this->forbidden('noInfos');
             }
         }

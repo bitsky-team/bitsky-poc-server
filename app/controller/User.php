@@ -49,13 +49,15 @@ class User extends Controller
 
     public function getById()
     {
-        if (!empty($_POST['token']) && !empty($_POST['uniq_id'])) {
-            $token = htmlspecialchars($_POST['token']);
-            $uniq_id = htmlspecialchars($_POST['uniq_id']);
+        $authorizedForeign = $this->isAuthorizedForeign();
+
+        if ((!empty($_POST['token']) && !empty($_POST['uniq_id'])) || $authorizedForeign) {
+            $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
+            $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'linkedDevice';
 
             $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-            if ($verify->success) {
+            if ($verify->success || $authorizedForeign) {
 
                 if(!empty($_POST['user_id'])) {
                     $userId = htmlspecialchars($_POST['user_id']);
@@ -71,6 +73,9 @@ class User extends Controller
 
                         return $this->forbidden('notFound');
                     }
+                } else {
+                    LogManager::store('[POST] Tentative de récupération d\'un utilisateur sans fournir son ID (ID utilisateur: ' . $uniq_id . ')', 2);
+                    return $this->forbidden('noID');
                 }
             } else 
             {
@@ -82,50 +87,83 @@ class User extends Controller
         }
     }
 
-    public function getByUniqId()
+    public function strangerGetById()
     {
-        if (!empty($_POST['token']) && !empty($_POST['uniq_id'])) {
-            $token = htmlspecialchars($_POST['token']);
+        if(!empty($_POST['uniq_id']) && !empty($_POST['bitsky_ip']) && !empty($_POST['user_id']))
+        {
             $uniq_id = htmlspecialchars($_POST['uniq_id']);
+            $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
+            $user_id = htmlspecialchars($_POST['user_id']);
 
-            $verify = json_decode($this->authService->verify($token, $uniq_id));
+            $links = $this->callAPI(
+                'POST',
+                'https://bitsky.be/getActiveLinks',
+                [
+                    'bitsky_key' => getenv('LINKING_KEY')
+                ]
+            );
 
-            if ($verify->success) {
+            $links = json_decode($links, true);
+            $correctStranger = false;
 
-                if(!empty($_POST['user_uniq_id'])) {
-                    $userUniqId = htmlspecialchars($_POST['user_uniq_id']);
+            if($links['success'])
+            {
+                foreach ($links['data'] as $link)
+                {
+                   if($bitsky_ip == $link['foreign_ip'])
+                   {
+                       $correctStranger = true;
+                   }
+                }
 
-                    $user = UserModel::where('uniq_id', $userUniqId)->first();
+                if($correctStranger)
+                {
+                    $response = $this->callAPI(
+                        'POST',
+                        'http://' . $link['foreign_ip'] . '/get_user',
+                        [
+                            'user_id' => $user_id
+                        ]
+                    );
 
-                    if($user != null) {
+                    $response = json_decode($response, true);
 
-                        unset($user['password']);
-                        return json_encode(['success' => true, 'user' => $user]);
-
-                    }else {
-
-                        return $this->forbidden('notFound');
+                    if($response['success'])
+                    {
+                        return json_encode(['success' => true, 'user' => $response['user']]);
+                    } else
+                    {
+                        $response['stranger'] = true;
+                        return json_encode($response);
                     }
+                } else
+                {
+                    LogManager::store('[POST] Tentative de communication avec un bitsky non autorisé (ID utilisateur: ' . $uniq_id . ')', 2);
+                    return $this->forbidden('intermediaryNotReachable');
                 }
             } else
             {
-                LogManager::store('[POST] Tentative de récupération de l\'utilisateur avec un token invalide (ID utilisateur: ' . $uniq_id . ')', 2);
-                return $this->forbidden('invalidToken');
+                LogManager::store('[POST] Impossible de récupérer les liaisons (ID utilisateur: ' . $uniq_id . ')', 2);
+                return $this->forbidden('intermediaryNotReachable');
             }
-        } else {
+        } else
+        {
+            LogManager::store('[POST] Tentative de récupération de l\'utilisateur de liaison sans fournir les paramètres (ID utilisateur: ' . $_POST['uniq_id'] . ')', 2);
             return $this->forbidden('noInfos');
         }
     }
 
     public function getFavoritesTrends()
     {
-        if (!empty($_POST['token']) && !empty($_POST['uniq_id'])) {
-            $token = htmlspecialchars($_POST['token']);
-            $uniq_id = htmlspecialchars($_POST['uniq_id']);
+        $authorizedForeign = $this->isAuthorizedForeign();
+
+        if ((!empty($_POST['token']) && !empty($_POST['uniq_id'])) || $authorizedForeign) {
+            $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
+            $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'linkedDevice';
 
             $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-            if ($verify->success) {
+            if ($verify->success || $authorizedForeign) {
 
                 if(!empty($_POST['user_id'])) {
                     $userId = htmlspecialchars($_POST['user_id']);
@@ -173,6 +211,72 @@ class User extends Controller
                 return $this->forbidden('invalidToken');
             }
         } else {
+            return $this->forbidden('noInfos');
+        }
+    }
+
+    public function strangerGetFavoritesTrends()
+    {
+        if(!empty($_POST['uniq_id']) && !empty($_POST['bitsky_ip']) && !empty($_POST['user_id']))
+        {
+            $uniq_id = htmlspecialchars($_POST['uniq_id']);
+            $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
+            $user_id = htmlspecialchars($_POST['user_id']);
+
+            $links = $this->callAPI(
+                'POST',
+                'https://bitsky.be/getActiveLinks',
+                [
+                    'bitsky_key' => getenv('LINKING_KEY')
+                ]
+            );
+
+            $links = json_decode($links, true);
+            $correctStranger = false;
+
+            if($links['success'])
+            {
+                foreach ($links['data'] as $link)
+                {
+                    if($bitsky_ip == $link['foreign_ip'])
+                    {
+                        $correctStranger = true;
+                    }
+                }
+
+                if($correctStranger)
+                {
+                    $response = $this->callAPI(
+                        'POST',
+                        'http://' . $link['foreign_ip'] . '/get_favoritestrends',
+                        [
+                            'user_id' => $user_id
+                        ]
+                    );
+
+                    $response = json_decode($response, true);
+
+                    if($response['success'])
+                    {
+                        return json_encode(['success' => true, 'favoritesTrends' => $response['favoritesTrends']]);
+                    } else
+                    {
+                        $response['stranger'] = true;
+                        return json_encode($response);
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative de communication avec un bitsky non autorisé (ID utilisateur: ' . $uniq_id . ')', 2);
+                    return $this->forbidden('intermediaryNotReachable');
+                }
+            } else
+            {
+                LogManager::store('[POST] Impossible de récupérer les liaisons (ID utilisateur: ' . $uniq_id . ')', 2);
+                return $this->forbidden('intermediaryNotReachable');
+            }
+        } else
+        {
+            LogManager::store('[POST] Tentative de récupération de l\'utilisateur de liaison sans fournir les paramètres (ID utilisateur: ' . $_POST['uniq_id'] . ')', 2);
             return $this->forbidden('noInfos');
         }
     }

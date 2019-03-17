@@ -247,7 +247,7 @@
                         {
                             $linkPosts = $this->callAPI(
                                 'POST',
-                                'http://' . $link['foreign_ip'] . '/get_allposts',
+                                'http://' . $link['foreign_ip'] . '/get_localposts',
                                 [
                                     'trend' => !empty($_POST['trend']) ? htmlspecialchars($_POST['trend']) : null
                                 ]
@@ -279,15 +279,17 @@
 
         public function getAllOfUser()
         {
-            if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['user_id']))
+            $authorizedForeign = $this->isAuthorizedForeign();
+
+            if((!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['user_id'])) || ($authorizedForeign && !empty($_POST['user_id'])))
             {
-                $token = htmlspecialchars($_POST['token']);
-                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
+                $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'linkedDevice';
                 $user_id = htmlspecialchars($_POST['user_id']);
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     $user = UserModel::where('id', $user_id)->first(['id', 'uniq_id', 'firstname', 'lastname', 'rank', 'avatar']);
 

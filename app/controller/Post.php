@@ -322,6 +322,72 @@
             }
         }
 
+        public function getAllOfStrangerUser()
+        {
+            if(!empty($_POST['uniq_id']) && !empty($_POST['bitsky_ip']) && !empty($_POST['user_id']))
+            {
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
+                $user_id = htmlspecialchars($_POST['user_id']);
+
+                $links = $this->callAPI(
+                    'POST',
+                    'https://bitsky.be/getActiveLinks',
+                    [
+                        'bitsky_key' => getenv('LINKING_KEY')
+                    ]
+                );
+
+                $links = json_decode($links, true);
+                $correctStranger = false;
+
+                if($links['success'])
+                {
+                    foreach ($links['data'] as $link)
+                    {
+                        if($bitsky_ip == $link['foreign_ip'])
+                        {
+                            $correctStranger = true;
+                        }
+                    }
+
+                    if($correctStranger)
+                    {
+                        $response = $this->callAPI(
+                            'POST',
+                            'http://' . $link['foreign_ip'] . '/get_allpostsofuser',
+                            [
+                                'user_id' => $user_id
+                            ]
+                        );
+
+                        $response = json_decode($response, true);
+
+                        if($response['success'])
+                        {
+                            return json_encode(['success' => true, 'posts' => $response['posts']]);
+                        } else
+                        {
+                            $response['stranger'] = true;
+                            return json_encode($response);
+                        }
+                    } else
+                    {
+                        LogManager::store('[POST] Tentative de communication avec un bitsky non autorisé (ID utilisateur: ' . $uniq_id . ')', 2);
+                        return $this->forbidden('intermediaryNotReachable');
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Impossible de récupérer les posts d\'un utilisateur (ID utilisateur: ' . $uniq_id . ')', 2);
+                    return $this->forbidden('intermediaryNotReachable');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération des posts d\'un utilisateur de liaison sans fournir les paramètres (ID utilisateur: ' . $_POST['uniq_id'] . ')', 2);
+                return $this->forbidden('noInfos');
+            }
+        }
+
         public function getScore()
         {
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']))

@@ -303,6 +303,10 @@
                         unset($user['uniq_id']);
                         $post->owner = $user;
 
+                        if($authorizedForeign) {
+                            $post->fromStranger = true;
+                        }
+
                         unset($post->owner_uniq_id);
                     }
 

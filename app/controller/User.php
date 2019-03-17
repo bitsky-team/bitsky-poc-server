@@ -86,13 +86,15 @@ class User extends Controller
 
     public function getFavoritesTrends()
     {
-        if (!empty($_POST['token']) && !empty($_POST['uniq_id'])) {
-            $token = htmlspecialchars($_POST['token']);
-            $uniq_id = htmlspecialchars($_POST['uniq_id']);
+        $authorizedForeign = $this->isAuthorizedForeign();
+
+        if ((!empty($_POST['token']) && !empty($_POST['uniq_id'])) || $authorizedForeign) {
+            $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
+            $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'linkedDevice';
 
             $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-            if ($verify->success) {
+            if ($verify->success || $authorizedForeign) {
 
                 if(!empty($_POST['user_id'])) {
                     $userId = htmlspecialchars($_POST['user_id']);

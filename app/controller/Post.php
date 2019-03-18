@@ -640,11 +640,13 @@
 
         public function getTrends()
         {
-            if(!empty($_POST['uniq_id']) && !empty($_POST['bitsky_ip']) && !empty($_POST['user_id']))
+            if(!empty($_POST['uniq_id']) && !empty($_POST['token']))
             {
+                $localTrends = $this->getLocalTrends();
+                $localTrends = json_decode($localTrends, true);
+                $strangerTrends = [];
+
                 $uniq_id = htmlspecialchars($_POST['uniq_id']);
-                $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
-                $user_id = htmlspecialchars($_POST['user_id']);
 
                 $links = $this->callAPI(
                     'POST',
@@ -655,48 +657,26 @@
                 );
 
                 $links = json_decode($links, true);
-                $correctStranger = false;
 
                 if($links['success'])
                 {
-                    foreach ($links['data'] as $link)
-                    {
-                        if($bitsky_ip == $link['foreign_ip'])
-                        {
-                            $correctStranger = true;
-                        }
-                    }
-
-                    if($correctStranger)
+                    foreach($links['data'] as $link)
                     {
                         $response = $this->callAPI(
                             'POST',
-                            'http://' . $link['foreign_ip'] . '/get_localtrends',
-                            [
-                                'user_id' => $user_id
-                            ]
+                            'http://' . $link['foreign_ip'] . '/get_localtrends'
                         );
 
                         $response = json_decode($response, true);
 
                         if($response['success'])
                         {
-                            $localTrends = $this->getLocalTrends();
-                            $localTrends = json_decode($localTrends, true);
-
-                            $trends = array_merge($localTrends['trends'], $response['trends']);
-
-                            return json_encode(['success' => true, 'trends' => $trends]);
-                        } else
-                        {
-                            $response['stranger'] = true;
-                            return json_encode($response);
+                            $strangerTrends = array_merge($strangerTrends, $response['trends']);
                         }
-                    } else
-                    {
-                        LogManager::store('[POST] Tentative de communication avec un bitsky non autorisé (ID utilisateur: ' . $uniq_id . ')', 2);
-                        return $this->forbidden('intermediaryNotReachable');
                     }
+
+                    $trends = array_merge($localTrends['trends'], $strangerTrends);
+                    return json_encode(['success' => true, 'trends' => $trends]);
                 } else
                 {
                     LogManager::store('[POST] Impossible de récupérer les sujets du moment (ID utilisateur: ' . $uniq_id . ')', 2);

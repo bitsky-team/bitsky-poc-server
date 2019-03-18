@@ -682,6 +682,8 @@
                         if($response['success'])
                         {
                             $localTrends = $this->getLocalTrends();
+                            return json_encode(['success' => true, 'trends' => $localTrends]);
+
                             $trends = array_merge($localTrends['trends'], $response['trends']);
 
                             return json_encode(['success' => true, 'trends' => $trends]);

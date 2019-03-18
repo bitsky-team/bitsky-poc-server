@@ -540,16 +540,18 @@
             }
         }
 
-        public function getTrends()
+        public function getLocalTrends()
         {
-            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            $authorizedForeign = $this->isAuthorizedForeign();
+
+            if((!empty($_POST['token']) && !empty($_POST['uniq_id'])) || $authorizedForeign)
             {
-                $token = htmlspecialchars($_POST['token']);
-                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
+                $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'linkedDevice';
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     $tags = TagModel::orderBy('uses', 'desc')->get();
 
@@ -632,6 +634,75 @@
                 }
             }else
             {
+                return $this->forbidden('noInfos');
+            }
+        }
+
+        public function getTrends()
+        {
+            if(!empty($_POST['uniq_id']) && !empty($_POST['bitsky_ip']) && !empty($_POST['user_id']))
+            {
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
+                $user_id = htmlspecialchars($_POST['user_id']);
+
+                $links = $this->callAPI(
+                    'POST',
+                    'https://bitsky.be/getActiveLinks',
+                    [
+                        'bitsky_key' => getenv('LINKING_KEY')
+                    ]
+                );
+
+                $links = json_decode($links, true);
+                $correctStranger = false;
+
+                if($links['success'])
+                {
+                    foreach ($links['data'] as $link)
+                    {
+                        if($bitsky_ip == $link['foreign_ip'])
+                        {
+                            $correctStranger = true;
+                        }
+                    }
+
+                    if($correctStranger)
+                    {
+                        $response = $this->callAPI(
+                            'POST',
+                            'http://' . $link['foreign_ip'] . '/get_localtrends',
+                            [
+                                'user_id' => $user_id
+                            ]
+                        );
+
+                        $response = json_decode($response, true);
+
+                        if($response['success'])
+                        {
+                            $localTrends = $this->getLocalTrends();
+                            $trends = array_merge($localTrends['trends'], $response['trends']);
+
+                            return json_encode(['success' => true, 'trends' => $trends]);
+                        } else
+                        {
+                            $response['stranger'] = true;
+                            return json_encode($response);
+                        }
+                    } else
+                    {
+                        LogManager::store('[POST] Tentative de communication avec un bitsky non autorisé (ID utilisateur: ' . $uniq_id . ')', 2);
+                        return $this->forbidden('intermediaryNotReachable');
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Impossible de récupérer les sujets du moment (ID utilisateur: ' . $uniq_id . ')', 2);
+                    return $this->forbidden('intermediaryNotReachable');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération des sujets du moment de liaison sans fournir les paramètres (ID utilisateur: ' . $_POST['uniq_id'] . ')', 2);
                 return $this->forbidden('noInfos');
             }
         }

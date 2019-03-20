@@ -638,6 +638,7 @@
             }
         }
 
+        // TODO: Get only 3 best trends
         public function getTrends()
         {
             if(!empty($_POST['uniq_id']) && !empty($_POST['token']))
@@ -676,6 +677,13 @@
                     }
 
                     $trends = array_merge($localTrends['trends'], $strangerTrends);
+
+                    usort($trends,function($first,$second){
+                        return $first['score'] < $second['score'];
+                    });
+
+                    $trends = array_slice($trends, 0, 3);
+
                     return json_encode(['success' => true, 'trends' => $trends]);
                 } else
                 {

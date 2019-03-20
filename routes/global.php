@@ -27,6 +27,7 @@ return [
     [   'POST',      '/get_allposts',                       'post',          'getAll'                       ],
     [   'POST',      '/get_allpostsofuser',                 'post',          'getAllOfUser'                 ],
     [   'POST',      '/get_allpostsofstrangeruser',         'post',          'getAllOfStrangerUser'         ],
+    [   'POST',      '/get_localtrends',                    'post',          'getLocalTrends'               ],
     [   'POST',      '/get_trends',                         'post',          'getTrends'                    ],
     [   'POST',      '/get_favoritestrends',                'user',          'getFavoritesTrends'           ],
     [   'POST',      '/get_strangerfavoritestrends',        'user',          'strangerGetFavoritesTrends'   ],

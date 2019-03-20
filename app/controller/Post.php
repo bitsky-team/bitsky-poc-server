@@ -638,7 +638,6 @@
             }
         }
 
-        // TODO: Get only 3 best trends
         public function getTrends()
         {
             if(!empty($_POST['uniq_id']) && !empty($_POST['token']))

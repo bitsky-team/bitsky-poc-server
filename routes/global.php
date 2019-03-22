@@ -7,7 +7,7 @@ return [
     [   'POST',      '/create_link',                        'link',          'createLink'                   ],
     [   'POST',      '/active_link',                        'link',          'activeLink'                   ],
     [   'POST',      '/get_link',                           'link',          'getLink'                      ],
-    [   'POST',      '/get_active_links',                   'link',          'getActiveLinks'               ], 
+    [   'POST',      '/get_active_links',                   'link',          'getActiveLinks'               ],
     [   'POST',      '/delete_link',                        'link',          'deleteLink'                   ],
     [   'POST',      '/delete_link_intermediary',           'link',          'deleteLinkIntermediary'       ],
     [   'POST',      '/login',                              'auth',          'login'                        ],

@@ -634,7 +634,7 @@
                 {
                     if (empty($_POST['bitsky_ip']))
                     {
-                        return $this->removeLocalFavorite();
+                        return $this->getLocalFavoriteOfUser();
                     } else
                     {
                         $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_get_local_user_favorite';

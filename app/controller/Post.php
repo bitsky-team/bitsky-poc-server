@@ -797,7 +797,7 @@
                             foreach($response['trends'] as $trend)
                             {
                                 $trend['fromStranger'] = $link['foreign_ip'];
-                                array_push($strangerTrends, $trend['fromStranger']);
+                                array_push($strangerTrends, $trend);
                             }
                         }
                     }

@@ -20,6 +20,7 @@ return [
     [   'POST',      '/remove_post',                        'post',          'remove'                       ],
     [   'POST',      '/post_add_local_favorite',            'post',          'addLocalFavorite'             ],
     [   'POST',      '/post_add_favorite',                  'post',          'addFavorite'                  ],
+    [   'POST',      '/post_remove_local_favorite',         'post',          'removeLocalFavorite'          ],
     [   'POST',      '/post_remove_favorite',               'post',          'removeFavorite'               ],
     [   'POST',      '/post_get_user_favorite',             'post',          'getFavoriteOfUser'            ],
     [   'POST',      '/get_post',                           'post',          'get'                          ],

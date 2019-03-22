@@ -450,17 +450,19 @@
             }
         }
 
-        public function addFavorite()
+        public function addLocalFavorite()
         {
-            if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['post_id']))
+            $authorizedForeign = $this->isAuthorizedForeign();
+
+            if(((!empty($_POST['token']) && !empty($_POST['uniq_id'])) || $authorizedForeign) && !empty($_POST['post_id']))
             {
-                $token = htmlspecialchars($_POST['token']);
-                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
+                $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'linkedDevice';
                 $post_id = htmlspecialchars($_POST['post_id']);
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     $post = PostModel::find($post_id);
                     $post->favorites = $post->favorites + 1;
@@ -479,6 +481,27 @@
             }else
             {
                 return $this->forbidden('noInfos');
+            }
+        }
+
+        public function addFavorite()
+        {
+            if(empty($_POST['bitsky_ip']))
+            {
+                $this->addLocalFavorite();
+            } else
+            {
+                $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_add_local_favorite';
+
+                $favorites = $this->callAPI(
+                    'POST',
+                    $url,
+                    [
+                        'post_id' => $_POST['post_id']
+                    ]
+                );
+
+                return $favorites;
             }
         }
 

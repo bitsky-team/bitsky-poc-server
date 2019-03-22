@@ -22,6 +22,7 @@ return [
     [   'POST',      '/post_add_favorite',                  'post',          'addFavorite'                  ],
     [   'POST',      '/post_remove_local_favorite',         'post',          'removeLocalFavorite'          ],
     [   'POST',      '/post_remove_favorite',               'post',          'removeFavorite'               ],
+    [   'POST',      '/post_get_local_user_favorite',       'post',          'getLocalFavoriteOfUser'       ],
     [   'POST',      '/post_get_user_favorite',             'post',          'getFavoriteOfUser'            ],
     [   'POST',      '/get_post',                           'post',          'get'                          ],
     [   'POST',      '/get_post_score',                     'post',          'getScore'                     ],

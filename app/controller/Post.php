@@ -189,7 +189,7 @@
                             ]
                         );
 
-                        return $favorite;
+                        return $post;
                     }
                 } else
                 {

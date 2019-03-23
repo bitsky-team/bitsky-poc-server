@@ -1013,14 +1013,14 @@
             }
         }
 
-        public function getBestComments()
+        public function getLocalBestComments()
         {
             $authorizedForeign = $this->isAuthorizedForeign();
 
-            if((!empty($_POST['token']) && !empty($_POST['uniq_id'])) || $authorizedForeign)
+            if((!empty($_POST['token']) && !empty($_POST['uniq_id'])))
             {
-                $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
-                $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'linkedDevice';
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
@@ -1036,7 +1036,7 @@
                             $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'avatar']);
                             unset($comment->owner_id);
                         }
-                        
+
                         return json_encode(['success' => true, 'comments' => $comments]);
                     }else
                     {
@@ -1050,6 +1050,45 @@
             }else
             {
                 return $this->forbidden('noInfos');
+            }
+        }
+
+        public function getBestComments()
+        {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['post_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->getLocalBestComments();
+                    } else
+                    {
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/get_localbestcomments';
+
+                        $favorite = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'post_id' => $_POST['post_id']
+                            ]
+                        );
+
+                        return $favorite;
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative de récupération des meilleurs commentaires sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération des meilleurs commentaires avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
             }
         }
 

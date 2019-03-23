@@ -37,6 +37,7 @@ return [
     [   'POST',      '/get_favoritestrends',                'user',          'getFavoritesTrends'           ],
     [   'POST',      '/get_strangerfavoritestrends',        'user',          'strangerGetFavoritesTrends'   ],
     [   'POST',      '/get_allcomments',                    'post',          'getAllComments'               ],
+    [   'POST',      '/get_localcommentscount',             'post',          'getLocalCommentsCount'        ],
     [   'POST',      '/get_commentscount',                  'post',          'getCommentsCount'             ],
     [   'POST',      '/get_localbestcomments',              'post',          'getLocalBestComments'         ],
     [   'POST',      '/get_bestcomments',                   'post',          'getBestComments'              ],

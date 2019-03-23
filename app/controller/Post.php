@@ -521,7 +521,7 @@
                             ]
                         );
 
-                        return $favorite;
+                        return $score;
                     }
                 } else
                 {

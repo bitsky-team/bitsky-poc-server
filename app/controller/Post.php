@@ -511,7 +511,7 @@
                     {
                         $url = htmlspecialchars($_POST['bitsky_ip']) . '/get_localpost_score';
 
-                        $favorite = $this->callAPI(
+                        $score = $this->callAPI(
                             'POST',
                             $url,
                             [

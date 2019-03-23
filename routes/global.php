@@ -43,6 +43,7 @@ return [
     [   'POST',      '/get_bestcomments',                   'post',          'getBestComments'              ],
     [   'POST',      '/post_add_comment',                   'post',          'addComment'                   ],
     [   'POST',      '/post_remove_comment',                'post',          'removeComment'                ],
+    [   'POST',      '/post_get_local_comments',            'post',          'getLocalComments'             ],
     [   'POST',      '/post_get_comments',                  'post',          'getComments'                  ],
     [   'POST',      '/post_get_user_comment_favorite',     'post',          'getCommentFavoriteOfUser'     ],
     [   'POST',      '/post_add_comment_favorite',          'post',          'addCommentFavorite'           ],

@@ -117,8 +117,10 @@
             }
         }
 
-        public function get()
+        public function getLocal()
         {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -126,10 +128,10 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
-                   if(!empty($_POST['post_id']))
-                   {
+                    if(!empty($_POST['post_id']))
+                    {
                         $id = htmlspecialchars($_POST['post_id']);
 
                         $post = PostModel::where('id', $id)->first();
@@ -144,10 +146,10 @@
                         {
                             return $this->forbidden('notFound');
                         }
-                   }else
-                   {
-                       return $this->forbidden();
-                   }                 
+                    }else
+                    {
+                        return $this->forbidden();
+                    }
                 }else
                 {
                     LogManager::store('[POST] Tentative de récupération d\'un post avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
@@ -156,6 +158,45 @@
             }else
             {
                 return $this->forbidden('noInfos');
+            }
+        }
+
+        public function get()
+        {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['post_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->getLocal();
+                    } else
+                    {
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/get_localpost';
+
+                        $favorite = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'post_id' => $_POST['post_id']
+                            ]
+                        );
+
+                        return $favorite;
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative d\'ajout d\'un post en favoris sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative d\'ajout d\'un post en favoris avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
             }
         }
 

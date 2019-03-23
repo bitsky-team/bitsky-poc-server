@@ -179,7 +179,7 @@
                     {
                         $url = htmlspecialchars($_POST['bitsky_ip']) . '/get_localpost';
 
-                        $favorite = $this->callAPI(
+                        $post = $this->callAPI(
                             'POST',
                             $url,
                             [

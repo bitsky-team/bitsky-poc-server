@@ -190,12 +190,12 @@
                     }
                 } else
                 {
-                    LogManager::store('[POST] Tentative d\'ajout d\'un post en favoris sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    LogManager::store('[POST] Tentative de récupération d\'un post sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
                     return $this->forbidden('invalidToken');
                 }
             } else
             {
-                LogManager::store('[POST] Tentative d\'ajout d\'un post en favoris avec un token invalide (ID utilisateur:  ?)', 2);
+                LogManager::store('[POST] Tentative de récupération d\'un post avec un token invalide (ID utilisateur:  ?)', 2);
                 return $this->forbidden('invalidToken');
             }
         }
@@ -429,8 +429,10 @@
             }
         }
 
-        public function getScore()
+        public function getLocalScore()
         {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -438,7 +440,7 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                    if(!empty($_POST['post_id']))
                    {
@@ -488,6 +490,45 @@
             }else
             {
                 return $this->forbidden('noInfos');
+            }
+        }
+
+        public function getScore()
+        {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['post_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->getLocalScore();
+                    } else
+                    {
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/get_localpost_score';
+
+                        $favorite = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'post_id' => $_POST['post_id']
+                            ]
+                        );
+
+                        return $favorite;
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative de récupération du score d\'un post sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération du score d\'un post avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
             }
         }
 

@@ -26,6 +26,7 @@ return [
     [   'POST',      '/post_get_user_favorite',             'post',          'getFavoriteOfUser'            ],
     [   'POST',      '/get_localpost',                      'post',          'getLocal'                     ],
     [   'POST',      '/get_post',                           'post',          'get'                          ],
+    [   'POST',      '/get_localpost_score',                'post',          'getLocalScore'                ],
     [   'POST',      '/get_post_score',                     'post',          'getScore'                     ],
     [   'POST',      '/get_localposts',                     'post',          'getLocalPosts'                ],
     [   'POST',      '/get_allposts',                       'post',          'getAll'                       ],

@@ -87,4 +87,28 @@
 
             return in_array($remoteAddress->getIpAddress(), $linksIP);
         }
+
+        public function checkUserToken()
+        {
+            $authService = new Auth();
+
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+                $verify = json_decode($authService->verify($token, $uniq_id));
+
+                if ($verify->success) {
+                    return [
+                        'uniq_id' => $uniq_id,
+                        'token' => $token
+                    ];
+                }
+
+                return null;
+            }
+
+            return null;
+        }
     }

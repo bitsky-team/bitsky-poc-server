@@ -450,8 +450,10 @@
             }
         }
 
-        public function addFavorite()
+        public function addLocalFavorite()
         {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['post_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -460,7 +462,7 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     $post = PostModel::find($post_id);
                     $post->favorites = $post->favorites + 1;
@@ -482,8 +484,49 @@
             }
         }
 
-        public function removeFavorite()
+        public function addFavorite()
         {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['post_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->addLocalFavorite();
+                    } else
+                    {
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_add_local_favorite';
+
+                        $favorite = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'post_id' => $_POST['post_id']
+                            ]
+                        );
+
+                        return $favorite;
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative d\'ajout d\'un post en favoris sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative d\'ajout d\'un post en favoris avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
+            }
+        }
+
+        public function removeLocalFavorite()
+        {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['post_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -492,7 +535,7 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     $post = PostModel::find($post_id);
                     $post->favorites = $post->favorites - 1;
@@ -513,8 +556,49 @@
             }
         }
 
-        public function getFavoriteOfUser()
+        public function removeFavorite()
         {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['post_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->removeLocalFavorite();
+                    } else
+                    {
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_remove_local_favorite';
+
+                        $favorite = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'post_id' => $_POST['post_id']
+                            ]
+                        );
+
+                        return $favorite;
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative d\'ajout d\'un post en favoris sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative d\'ajout d\'un post en favoris avec un token invalide (ID utilisateur: ?)', 2);
+                return $this->forbidden('invalidToken');
+            }
+        }
+
+        public function getLocalFavoriteOfUser()
+        {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['post_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -523,10 +607,10 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     $postFavorite = PostFavoriteModel::where('post_id',$post_id)
-                    ->where('user_uniq_id', $uniq_id)->first();
+                        ->where('user_uniq_id', $uniq_id)->first();
 
                     return json_encode(['success' => true, 'favorite' => $postFavorite != null]);
                 }else
@@ -537,6 +621,45 @@
             }else
             {
                 return $this->forbidden('noInfos');
+            }
+        }
+
+        public function getFavoriteOfUser()
+        {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['post_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->getLocalFavoriteOfUser();
+                    } else
+                    {
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_get_local_user_favorite';
+
+                        $favorite = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'post_id' => $_POST['post_id']
+                            ]
+                        );
+
+                        return $favorite;
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative de récupération d\'un favoris de post sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération d\'un favoris de post avec un token invalide (ID utilisateur: ?)', 2);
+                return $this->forbidden('invalidToken');
             }
         }
 
@@ -671,7 +794,11 @@
 
                         if($response['success'])
                         {
-                            $strangerTrends = array_merge($strangerTrends, $response['trends']);
+                            foreach($response['trends'] as $trend)
+                            {
+                                $trend['fromStranger'] = $link['foreign_ip'];
+                                array_push($strangerTrends, $trend);
+                            }
                         }
                     }
 

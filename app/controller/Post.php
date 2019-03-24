@@ -1313,6 +1313,17 @@
                                     $post->comments = $post->comments + 1;
                                     $post->save();
 
+                                    $owner = $this->callAPI(
+                                        'POST',
+                                        'http://localhost/get_user_by_uniq_id',
+                                        [
+                                            'uniq_id' => $uniq_id,
+                                            'token' => $token,
+                                            'user_uniq_id' => $uniq_id
+                                        ]
+                                    );
+
+                                    return json_encode($owner);
 
                                     $comment->owner = UserModel::where('uniq_id', $uniq_id)->first(['firstname', 'lastname', 'avatar']);
 

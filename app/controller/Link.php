@@ -21,30 +21,13 @@
 
         public function getKeyOfIp($ip)
         {
-            if(!empty($_POST['token']) && !empty($_POST['uniq_id'])) {
-                $token = htmlspecialchars($_POST['token']);
-                $uniq_id = htmlspecialchars($_POST['uniq_id']);
-
-                $verify = json_decode($this->authService->verify($token, $uniq_id));
-
-                if ($verify->success)
-                {
-                    return $this->callAPI(
-                        'POST',
-                        'https://bitsky.be/getKey',
-                        [
-                            'bitsky_ip' => $ip
-                        ]
-                    );
-                } else
-                {
-                    LogManager::store('[POST] Tentative de récupération de la clé de liaison étrangère avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
-                    return $this->forbidden('invalidToken');
-                }
-            }else
-            {
-                return $this->forbidden('noInfos');
-            }
+            return $this->callAPI(
+                'POST',
+                'https://bitsky.be/getKey',
+                [
+                    'bitsky_ip' => $ip
+                ]
+            );
         }
 
         public function getLinkingKey()

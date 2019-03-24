@@ -12,6 +12,6 @@
             'owner_id',
             'post_id',
             'content',
-            'is_foreign'
+            'link_id'
         ];
     }

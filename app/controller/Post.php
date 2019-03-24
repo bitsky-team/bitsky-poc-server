@@ -1201,7 +1201,30 @@
 
                         foreach($comments as $comment)
                         {
-                            $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'avatar']);
+                            if(!empty($comment->link_id))
+                            {
+                                $linkController = new Link();
+                                $_POST['link_id'] = $comment->link_id;
+                                $link = $linkController->getLinkById();
+                                $bitsky_ip = $linkController->getIpOfKey($link->bitsky_key);
+
+                                $owner = json_decode($this->callAPI(
+                                    'POST',
+                                    'http://localhost/get_user_by_uniq_id',
+                                    [
+                                        'uniq_id' => $uniq_id,
+                                        'token' => $token,
+                                        'user_uniq_id' => $comment->owner_id,
+                                        'bitsky_ip' => $bitsky_ip
+                                    ]
+                                ), true);
+
+                                $comment->owner = $owner['user'];
+                            } else
+                            {
+                                $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'avatar']);
+                            }
+
                             unset($comment->owner_id);
                         }
 
@@ -1314,7 +1337,7 @@
                                     $post->comments = $post->comments + 1;
                                     $post->save();
 
-                                    $owner = $this->callAPI(
+                                    $owner = json_decode($this->callAPI(
                                         'POST',
                                         'http://localhost/get_user_by_uniq_id',
                                         [
@@ -1323,11 +1346,9 @@
                                             'user_uniq_id' => $uniq_id,
                                             'bitsky_ip' => !empty($bitsky_ip) ? $bitsky_ip : null
                                         ]
-                                    );
+                                    ), true);
 
-                                    return json_encode($owner);
-
-                                    $comment->owner = UserModel::where('uniq_id', $uniq_id)->first(['firstname', 'lastname', 'avatar']);
+                                    $comment->owner = $owner['user'];
 
                                     return json_encode(['success' => true, 'comment' => $comment]);
                                 }else

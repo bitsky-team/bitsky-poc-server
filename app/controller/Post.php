@@ -1290,7 +1290,8 @@
                                 {
                                     $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
                                     $linkController = new Link();
-                                    $key = $linkController->getKeyOfIp($bitsky_ip);
+                                    $key = json_decode($linkController->getKeyOfIp($bitsky_ip), true);
+                                    $key = $key['data'];
                                     $link = \Model\Link::where('bitsky_key', $key)->first();
 
                                     $comment = PostCommentModel::create([
@@ -1319,7 +1320,8 @@
                                         [
                                             'uniq_id' => $uniq_id,
                                             'token' => $token,
-                                            'user_uniq_id' => $uniq_id
+                                            'user_uniq_id' => $uniq_id,
+                                            'bitsky_ip' => !empty($bitsky_ip) ? $bitsky_ip : null
                                         ]
                                     );
 

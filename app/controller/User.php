@@ -157,7 +157,7 @@ class User extends Controller
     {
         $authorizedForeign = $this->isAuthorizedForeign();
 
-        if (!empty($_POST['token']) && !empty($_POST['uniq_id']))
+        if (!empty($_POST['token']) && !empty($_POST['uniq_id']) || $authorizedForeign)
         {
             $token = htmlspecialchars($_POST['token']);
             $uniq_id = htmlspecialchars($_POST['uniq_id']);
@@ -195,40 +195,31 @@ class User extends Controller
 
     public function getByUniqId()
     {
-        $check = $this->checkUserToken();
-
-        if(!empty($check))
+        if (!empty($_POST['user_uniq_id']))
         {
-            if (!empty($_POST['user_uniq_id']))
+            if (empty($_POST['bitsky_ip']))
             {
-                if (empty($_POST['bitsky_ip']))
-                {
-                    return $this->localGetByUniqId();
-                } else
-                {
-                    $url = htmlspecialchars($_POST['bitsky_ip']) . '/get_local_user_by_uniq_id';
-
-                    $user = $this->callAPI(
-                        'POST',
-                        $url,
-                        [
-                            'uniq_id' => $check['uniq_id'],
-                            'token' => $check['token'],
-                            'user_uniq_id' => $_POST['user_uniq_id'],
-                        ]
-                    );
-
-                    return $user;
-                }
+                return $this->localGetByUniqId();
             } else
             {
-                LogManager::store('[POST] Tentative de récupération de l\'utilisateur sans fournir de uniq id (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
-                return $this->forbidden('invalidToken');
+                $url = htmlspecialchars($_POST['bitsky_ip']) . '/get_local_user_by_uniq_id';
+
+                $user = $this->callAPI(
+                    'POST',
+                    $url,
+                    [
+                        'uniq_id' => null,
+                        'token' => null,
+                        'user_uniq_id' => $_POST['user_uniq_id'],
+                    ]
+                );
+
+                return $user;
             }
         } else
         {
-            LogManager::store('[POST] Tentative de récupération de l\'utilisateur avec un token invalide (ID utilisateur:  ?)', 2);
-            return $this->forbidden('invalidToken');
+            LogManager::store('[POST] Tentative de récupération de l\'utilisateur sans fournir de uniq id (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+            return $this->forbidden('invalidUserId');
         }
     }
 

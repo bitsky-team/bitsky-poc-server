@@ -153,7 +153,7 @@ class User extends Controller
         }
     }
 
-    public function getByUniqId()
+    public function localGetByUniqId()
     {
         $authorizedForeign = $this->isAuthorizedForeign();
 
@@ -193,7 +193,7 @@ class User extends Controller
         }
     }
 
-    public function strangerGetByUniqId()
+    public function getByUniqId()
     {
         $check = $this->checkUserToken();
 
@@ -203,10 +203,10 @@ class User extends Controller
             {
                 if (empty($_POST['bitsky_ip']))
                 {
-                    return $this->getByUniqId();
+                    return $this->localGetByUniqId();
                 } else
                 {
-                    $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_add_local_comment';
+                    $url = htmlspecialchars($_POST['bitsky_ip']) . '/get_local_user_by_uniq_id';
 
                     $user = $this->callAPI(
                         'POST',

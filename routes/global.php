@@ -56,7 +56,7 @@ return [
     [   'POST',      '/get_user',                           'user',          'getById'                      ],
     [   'POST',      '/get_stranger_user',                  'user',          'strangerGetById'              ],
     [   'POST',      '/get_user_by_uniq_id',                'user',          'getByUniqId'                  ],
-    [   'POST',      '/get_stranger_user_by_uniq_id',       'user',          'strangerGetByUniqId'          ],
+    [   'POST',      '/get_local_user_by_uniq_id',          'user',          'localGetByUniqId'             ],
     [   'GET',       '/get_ranks',                          'rank',          'getAll'                       ],
     [   'GET',       '/get_registration_module_state',      'module',        'getRegistrationState'         ],
     [   'POST',      '/toggle_registration_module_state',   'module',        'toggleRegistrationState'      ],

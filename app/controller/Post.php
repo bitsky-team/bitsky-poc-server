@@ -1358,8 +1358,8 @@
                         return $this->addLocalComment();
                     } else
                     {
-                        $remoteAddress = new RemoteAddress();
                         $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_add_local_comment';
+                        $external_ip = exec('curl http://ipecho.net/plain; echo');
 
                         $comment = $this->callAPI(
                             'POST',
@@ -1369,7 +1369,7 @@
                                 'token' => $check['token'],
                                 'post_id' => $_POST['post_id'],
                                 'content' => $_POST['content'],
-                                'bitsky_ip' => $remoteAddress->getIpAddress()
+                                'bitsky_ip' => $external_ip
                             ]
                         );
 

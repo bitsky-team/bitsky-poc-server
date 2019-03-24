@@ -1367,11 +1367,12 @@
                                 'uniq_id' => $check['uniq_id'],
                                 'token' => $check['token'],
                                 'post_id' => $_POST['post_id'],
+                                'content' => $_POST['content'],
                                 'bitsky_ip' => $remoteAddress->getIpAddress()
                             ]
                         );
 
-                        return $comment;
+                        return $comment; 
                     }
                 } else
                 {

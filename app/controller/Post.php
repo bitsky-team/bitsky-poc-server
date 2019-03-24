@@ -5,6 +5,7 @@
     use \Kernel\JWT;
     use \Kernel\LogManager;
     use \Controller\Auth;
+    use \Kernel\RemoteAddress;
     use \Model\Post as PostModel;
     use \Model\PostFavorite as PostFavoriteModel;
     use \Model\Tag as TagModel;
@@ -1259,8 +1260,10 @@
             }
         }
 
-        public function addComment()
+        public function addLocalComment()
         {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -1268,7 +1271,7 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     if(!empty($_POST['post_id']) && !empty($_POST['content']))
                     {
@@ -1281,11 +1284,29 @@
                         {
                             if(strlen($content) > 0)
                             {
-                                $comment = PostCommentModel::create([
-                                    'owner_id' => $uniq_id,
-                                    'post_id' => $post_id,
-                                    'content' => $content
-                                ]);
+                                $comment = null;
+
+                                if($authorizedForeign)
+                                {
+                                    $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
+                                    $linkController = new Link();
+                                    $key = $linkController->getKeyOfIp($bitsky_ip);
+                                    $link = \Model\Link::where('bitsky_key', $key)->first;
+
+                                    $comment = PostCommentModel::create([
+                                        'owner_id' => $uniq_id,
+                                        'post_id' => $post_id,
+                                        'content' => $content,
+                                        'link_id' => $link->id
+                                    ]);
+                                } else
+                                {
+                                    $comment = PostCommentModel::create([
+                                        'owner_id' => $uniq_id,
+                                        'post_id' => $post_id,
+                                        'content' => $content
+                                    ]);
+                                }
         
                                 if($comment != null)
                                 {
@@ -1320,6 +1341,47 @@
             }else
             {
                 return $this->forbidden('noInfos');
+            }
+        }
+
+        public function addComment()
+        {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['post_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->addLocalComment();
+                    } else
+                    {
+                        $remoteAddress = new RemoteAddress();
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_add_local_comment';
+
+                        $comment = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'post_id' => $_POST['post_id'],
+                                'bitsky_ip' => $remoteAddress->getIpAddress()
+                            ]
+                        );
+
+                        return $comment;
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative de récupération des meilleurs commentaires sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération des meilleurs commentaires avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
             }
         }
 

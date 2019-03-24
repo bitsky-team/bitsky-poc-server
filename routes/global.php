@@ -41,6 +41,7 @@ return [
     [   'POST',      '/get_commentscount',                  'post',          'getCommentsCount'             ],
     [   'POST',      '/get_localbestcomments',              'post',          'getLocalBestComments'         ],
     [   'POST',      '/get_bestcomments',                   'post',          'getBestComments'              ],
+    [   'POST',      '/post_add_local_comment',             'post',          'addLocalComment'              ],
     [   'POST',      '/post_add_comment',                   'post',          'addComment'                   ],
     [   'POST',      '/post_remove_comment',                'post',          'removeComment'                ],
     [   'POST',      '/post_get_local_comments',            'post',          'getLocalComments'             ],

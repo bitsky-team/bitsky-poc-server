@@ -43,6 +43,8 @@
 
         public function getLinkById()
         {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -50,7 +52,7 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     if(!empty($_POST['link_id']))
                     {

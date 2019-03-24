@@ -1205,8 +1205,11 @@
                             {
                                 $linkController = new Link();
                                 $_POST['link_id'] = $comment->link_id;
-                                $link = $linkController->getLinkById();
-                                $bitsky_ip = $linkController->getIpOfKey($link->bitsky_key);
+                                $link = json_decode($linkController->getLinkById(), true);
+                                $link = $link['link'];
+
+                                $bitsky_ip = json_decode($linkController->getIpOfKey($link['bitsky_key']), true);
+                                $bitsky_ip = $bitsky_ip['data'];
 
                                 $owner = json_decode($this->callAPI(
                                     'POST',
@@ -1218,7 +1221,7 @@
                                         'bitsky_ip' => $bitsky_ip
                                     ]
                                 ), true);
-
+                                
                                 $comment->owner = $owner['user'];
                             } else
                             {

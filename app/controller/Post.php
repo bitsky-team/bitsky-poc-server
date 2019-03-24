@@ -1291,7 +1291,7 @@
                                     $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
                                     $linkController = new Link();
                                     $key = $linkController->getKeyOfIp($bitsky_ip);
-                                    $link = \Model\Link::where('bitsky_key', $key)->first;
+                                    $link = \Model\Link::where('bitsky_key', $key)->first();
 
                                     $comment = PostCommentModel::create([
                                         'owner_id' => $uniq_id,
@@ -1372,7 +1372,7 @@
                             ]
                         );
 
-                        return $comment; 
+                        return $comment;
                     }
                 } else
                 {

@@ -153,6 +153,85 @@ class User extends Controller
         }
     }
 
+    public function getByUniqId()
+    {
+        $authorizedForeign = $this->isAuthorizedForeign();
+
+        if (!empty($_POST['token']) && !empty($_POST['uniq_id']))
+        {
+            $token = htmlspecialchars($_POST['token']);
+            $uniq_id = htmlspecialchars($_POST['uniq_id']);
+            $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+            if ($verify->success || $authorizedForeign)
+            {
+                if(!empty($_POST['user_uniq_id']))
+                {
+                    $userUniqId = htmlspecialchars($_POST['user_uniq_id']);
+                    $user = UserModel::where('uniq_id', $userUniqId)->first();
+
+                    if($user != null)
+                    {
+                        unset($user['password']);
+                        return json_encode(['success' => true, 'user' => $user]);
+                    }else
+                    {
+                        return $this->forbidden('notFound');
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative de récupération de l\'utilisateur sans fournir de uniq id (ID utilisateur: ' . $uniq_id . ')', 2);
+                    return $this->forbidden('noUniqId');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération de l\'utilisateur avec un token invalide (ID utilisateur: ' . $uniq_id . ')', 2);
+                return $this->forbidden('invalidToken');
+            }
+        } else {
+            return $this->forbidden('noInfos');
+        }
+    }
+
+    public function strangerGetByUniqId()
+    {
+        $check = $this->checkUserToken();
+
+        if(!empty($check))
+        {
+            if (!empty($_POST['user_uniq_id']))
+            {
+                if (empty($_POST['bitsky_ip']))
+                {
+                    return $this->getByUniqId();
+                } else
+                {
+                    $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_add_local_comment';
+
+                    $user = $this->callAPI(
+                        'POST',
+                        $url,
+                        [
+                            'uniq_id' => $check['uniq_id'],
+                            'token' => $check['token'],
+                            'user_uniq_id' => $_POST['user_uniq_id'],
+                        ]
+                    );
+
+                    return $user;
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération de l\'utilisateur sans fournir de uniq id (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                return $this->forbidden('invalidToken');
+            }
+        } else
+        {
+            LogManager::store('[POST] Tentative de récupération de l\'utilisateur avec un token invalide (ID utilisateur:  ?)', 2);
+            return $this->forbidden('invalidToken');
+        }
+    }
+
     public function getFavoritesTrends()
     {
         $authorizedForeign = $this->isAuthorizedForeign();

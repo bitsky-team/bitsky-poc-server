@@ -1257,9 +1257,9 @@
                                 }
                             } else
                             {
-                                if(getHostByName(getHostName()) !== '127.0.1.1' && getHostByName(getHostName()) !== '::1')
+                                if($authorizedForeign)
                                 {
-                                    $comment->fromStranger  = true;
+                                    $comment->fromStranger  = $external_ip;
                                 }
 
                                 $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'avatar']);

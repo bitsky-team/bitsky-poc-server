@@ -349,7 +349,7 @@
                         $post->owner = $user;
 
                         if($authorizedForeign) {
-                            $post->fromStranger = true;
+                            $post->fromStranger = $_POST['bitsky_ip'];
                         }
 
                         unset($post->owner_uniq_id);
@@ -402,7 +402,8 @@
                             'POST',
                             'http://' . $link['foreign_ip'] . '/get_allpostsofuser',
                             [
-                                'user_id' => $user_id
+                                'user_id' => $user_id,
+                                'bitsky_ip' => $link['foreign_ip']
                             ]
                         );
 

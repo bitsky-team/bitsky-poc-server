@@ -1251,13 +1251,17 @@
 
                                 $comment->owner = $owner['user'];
 
-                                if($bitsky_ip !== $remoteAddress->getIpAddress())
+                                if($bitsky_ip != $remoteAddress->getIpAddress())
                                 {
                                     $comment->fromStranger  = $external_ip;
                                 }
                             } else
                             {
-                                $comment->fromStranger  = $external_ip;
+                                if(getHostByName(getHostName()) !== '127.0.1.1' && getHostByName(getHostName()) !== '::1')
+                                {
+                                    $comment->fromStranger  = true;
+                                }
+
                                 $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'avatar']);
                             }
 

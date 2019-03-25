@@ -960,7 +960,32 @@
 
                         foreach($comments as $comment)
                         {
-                            $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'rank', 'avatar']);
+                            if(!empty($comment->link_id))
+                            {
+                                $linkController = new Link();
+                                $_POST['link_id'] = $comment->link_id;
+                                $link = json_decode($linkController->getLinkById(), true);
+                                $link = $link['link'];
+
+                                $bitsky_ip = json_decode($linkController->getIpOfKey($link['bitsky_key']), true);
+                                $bitsky_ip = $bitsky_ip['data'];
+
+                                $owner = json_decode($this->callAPI(
+                                    'POST',
+                                    'http://localhost/get_user_by_uniq_id',
+                                    [
+                                        'uniq_id' => $uniq_id,
+                                        'token' => $token,
+                                        'user_uniq_id' => $comment->owner_id,
+                                        'bitsky_ip' => $bitsky_ip
+                                    ]
+                                ), true);
+
+                                $comment->owner = $owner['user'];
+                            } else
+                            {
+                                $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'rank', 'avatar']);
+                            }
                         }
                         
                         return json_encode(['success' => true, 'comments' => $comments]);
@@ -1189,6 +1214,7 @@
             {
                 $token = htmlspecialchars($_POST['token']);
                 $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $remoteAddress = new RemoteAddress();
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
@@ -1196,6 +1222,7 @@
                 {
                     if(!empty($_POST['post_id']))
                     {
+                        $external_ip = exec('curl http://ipecho.net/plain; echo');
                         $post_id = htmlspecialchars($_POST['post_id']);
                         $comments = PostCommentModel::where('post_id', $post_id)->orderBy('favorites', 'desc')->take(3)->get();
 
@@ -1221,10 +1248,16 @@
                                         'bitsky_ip' => $bitsky_ip
                                     ]
                                 ), true);
-                                
+
                                 $comment->owner = $owner['user'];
+
+                                if($bitsky_ip !== $remoteAddress->getIpAddress())
+                                {
+                                    $comment->fromStranger  = $external_ip;
+                                }
                             } else
                             {
+                                $comment->fromStranger  = $external_ip;
                                 $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'avatar']);
                             }
 

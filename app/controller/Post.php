@@ -1030,7 +1030,22 @@
                             ]
                         );
 
-                        return $comments;
+                        $linkComments = json_decode($comments, true);
+
+                        if($linkComments['success'])
+                        {
+                            $comments = $linkComments['comments'];
+
+                            foreach($comments as $comment)
+                            {
+                                $comment->fromStranger = $_POST['bitsky_ip'];
+                            }
+
+                            return $comments;
+                        } else
+                        {
+                            return $this->forbidden('cantGetDistantPosts');
+                        }
                     }
                 } else
                 {
@@ -1498,8 +1513,6 @@
                         {
                             return $this->forbidden();
                         }
-
-                        return json_encode(['success' => true]);
                     }else
                     {
                         LogManager::store('[POST] Tentative de suppression d\'un commentaire sans autorisation (ID utilisateur: '.$uniq_id.')', 2);

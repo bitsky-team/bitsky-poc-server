@@ -1008,6 +1008,7 @@
         public function getComments()
         {
             $check = $this->checkUserToken();
+            $authorizedForeign = $this->isAuthorizedForeign();
 
             if(!empty($check))
             {
@@ -1034,17 +1035,22 @@
 
                         if($linkComments['success'])
                         {
-                            $comments = $linkComments['comments'];
+                            $comments = [];
 
-                            foreach($comments as $comment)
+                            foreach($linkComments['comments'] as $comment)
                             {
-                                $comment->fromStranger = $_POST['bitsky_ip'];
+                                if(empty($comment['link_id']))
+                                {
+                                    $comment['fromStranger'] = $_POST['bitsky_ip'];
+                                }
+
+                                array_push($comments, $comment);
                             }
 
-                            return $comments;
+                            return json_encode(['success' => true, 'comments' => $comments]);
                         } else
                         {
-                            return $this->forbidden('cantGetDistantPosts');
+                            return 'cantGetForeignPosts';
                         }
                     }
                 } else

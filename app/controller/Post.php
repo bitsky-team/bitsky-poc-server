@@ -1066,6 +1066,8 @@
 
         public function addLocalCommentFavorite()
         {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['post_comment_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -1074,7 +1076,7 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     $comment = PostCommentModel::find($post_comment_id);
                     $comment->favorites = $comment->favorites + 1;

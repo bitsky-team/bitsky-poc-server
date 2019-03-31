@@ -1599,7 +1599,7 @@
                 }
             } else
             {
-                LogManager::store('[POST] Tentative d\'ajout de post avec un token invalide (ID utilisateur:  ?)', 2);
+                LogManager::store('[POST] Tentative d\'ajout de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
                 return $this->forbidden('invalidToken');
             }
         }

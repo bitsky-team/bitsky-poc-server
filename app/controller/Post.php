@@ -1267,7 +1267,7 @@
                     }
                 } else
                 {
-                    LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    LogManager::store('[POST] Tentative de récupération de favoris de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
                     return $this->forbidden('invalidToken');
                 }
             } else

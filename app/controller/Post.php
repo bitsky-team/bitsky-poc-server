@@ -1594,7 +1594,7 @@
                     }
                 } else
                 {
-                    LogManager::store('[POST] Tentative d\'ajout de post sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    LogManager::store('[POST] Tentative d\'ajout de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
                     return $this->forbidden('invalidToken');
                 }
             } else

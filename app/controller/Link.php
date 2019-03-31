@@ -2,7 +2,6 @@
 
     namespace Controller;
 
-    use \Controller\Auth;
     use \Kernel\LogManager;
     use \Kernel\RemoteAddress;
     use \Model\User as UserModel;
@@ -18,6 +17,69 @@
         {
             $this->authService = new Auth();
             $this->remoteAddress = new RemoteAddress();
+        }
+
+        public function getKeyOfIp($ip)
+        {
+            return $this->callAPI(
+                'POST',
+                'https://bitsky.be/getKey',
+                [
+                    'bitsky_ip' => $ip
+                ]
+            );
+        }
+
+        public function getIpOfKey($key)
+        {
+            return $this->callAPI(
+                'POST',
+                'https://bitsky.be/getIp',
+                [
+                    'bitsky_key' => $key
+                ]
+            );
+        }
+
+        public function getLinkById()
+        {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success || $authorizedForeign)
+                {
+                    if(!empty($_POST['link_id']))
+                    {
+                        $link_id = htmlspecialchars($_POST['link_id']);
+                        $link = LinkModel::where('id', $link_id)->first();
+
+                        if(!empty($link))
+                        {
+                            return json_encode(['success' => true, 'link' => $link]);
+                        }else
+                        {
+                            return $this->forbidden('notFound');
+                        }
+                    }else
+                    {
+                        LogManager::store('[POST] Tentative de récupération de la clé de liaison sans fournir son id (ID utilisateur: '.$uniq_id.')', 2);
+                        return $this->forbidden('invalidToken');
+                    }
+                }else
+                {
+                    LogManager::store('[POST] Tentative de récupération de la clé de liaison avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
         }
 
         public function getLinkingKey()

@@ -85,7 +85,10 @@
                 }
             }
 
-            return in_array($remoteAddress->getIpAddress(), $linksIP);
+            return
+                in_array($remoteAddress->getIpAddress(), $linksIP)
+                || $remoteAddress->getIpAddress() == '::1'
+                || $remoteAddress->getIpAddress() == '127.0.0.1';
         }
 
         public function checkUserToken()

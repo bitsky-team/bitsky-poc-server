@@ -5,6 +5,7 @@
     use \Kernel\JWT;
     use \Kernel\LogManager;
     use \Controller\Auth;
+    use \Kernel\RemoteAddress;
     use \Model\Post as PostModel;
     use \Model\PostFavorite as PostFavoriteModel;
     use \Model\Tag as TagModel;
@@ -179,7 +180,7 @@
                     {
                         $url = htmlspecialchars($_POST['bitsky_ip']) . '/get_localpost';
 
-                        $post = $this->callAPI(
+                        $favorite = $this->callAPI(
                             'POST',
                             $url,
                             [
@@ -189,7 +190,7 @@
                             ]
                         );
 
-                        return $post;
+                        return $favorite;
                     }
                 } else
                 {
@@ -348,7 +349,7 @@
                         $post->owner = $user;
 
                         if($authorizedForeign) {
-                            $post->fromStranger = true;
+                            $post->fromStranger = $_POST['bitsky_ip'];
                         }
 
                         unset($post->owner_uniq_id);
@@ -401,7 +402,8 @@
                             'POST',
                             'http://' . $link['foreign_ip'] . '/get_allpostsofuser',
                             [
-                                'user_id' => $user_id
+                                'user_id' => $user_id,
+                                'bitsky_ip' => $link['foreign_ip']
                             ]
                         );
 
@@ -511,7 +513,7 @@
                     {
                         $url = htmlspecialchars($_POST['bitsky_ip']) . '/get_localpost_score';
 
-                        $score = $this->callAPI(
+                        $favorite = $this->callAPI(
                             'POST',
                             $url,
                             [
@@ -521,7 +523,7 @@
                             ]
                         );
 
-                        return $score;
+                        return $favorite;
                     }
                 } else
                 {
@@ -939,8 +941,10 @@
             }
         }
 
-        public function getComments()
+        public function getLocalComments()
         {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -948,7 +952,7 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     if(!empty($_POST['post_id']))
                     {
@@ -957,7 +961,32 @@
 
                         foreach($comments as $comment)
                         {
-                            $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'rank', 'avatar']);
+                            if(!empty($comment->link_id))
+                            {
+                                $linkController = new Link();
+                                $_POST['link_id'] = $comment->link_id;
+                                $link = json_decode($linkController->getLinkById(), true);
+                                $link = $link['link'];
+
+                                $bitsky_ip = json_decode($linkController->getIpOfKey($link['bitsky_key']), true);
+                                $bitsky_ip = $bitsky_ip['data'];
+
+                                $owner = json_decode($this->callAPI(
+                                    'POST',
+                                    'http://localhost/get_user_by_uniq_id',
+                                    [
+                                        'uniq_id' => $uniq_id,
+                                        'token' => $token,
+                                        'user_uniq_id' => $comment->owner_id,
+                                        'bitsky_ip' => $bitsky_ip
+                                    ]
+                                ), true);
+
+                                $comment->owner = $owner['user'];
+                            } else
+                            {
+                                $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'rank', 'avatar']);
+                            }
                         }
                         
                         return json_encode(['success' => true, 'comments' => $comments]);
@@ -976,8 +1005,69 @@
             }
         }
 
-        public function addCommentFavorite()
+        public function getComments()
         {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['post_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->getLocalComments();
+                    } else
+                    {
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_get_local_comments';
+
+                        $comments = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'post_id' => $_POST['post_id']
+                            ]
+                        );
+
+                        $linkComments = json_decode($comments, true);
+
+                        if($linkComments['success'])
+                        {
+                            $comments = [];
+
+                            foreach($linkComments['comments'] as $comment)
+                            {
+                                if(empty($comment['link_id']))
+                                {
+                                    $comment['fromStranger'] = $_POST['bitsky_ip'];
+                                }
+
+                                array_push($comments, $comment);
+                            }
+
+                            return json_encode(['success' => true, 'comments' => $comments]);
+                        } else
+                        {
+                            return 'cantGetForeignPosts';
+                        }
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative de récupération des commentaires d\'un post sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération des commentaires d\'un post avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
+            }
+        }
+
+        public function addLocalCommentFavorite()
+        {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['post_comment_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -986,7 +1076,7 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     $comment = PostCommentModel::find($post_comment_id);
                     $comment->favorites = $comment->favorites + 1;
@@ -1009,8 +1099,49 @@
             }
         }
 
-        public function removeCommentFavorite()
+        public function addCommentFavorite()
         {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['post_comment_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->addLocalCommentFavorite();
+                    } else
+                    {
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_add_local_comment_favorite';
+
+                        $commentFavorite = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'post_comment_id' => $_POST['post_comment_id']
+                            ]
+                        );
+
+                        return $commentFavorite;
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
+            }
+        }
+
+        public function removeLocalCommentFavorite()
+        {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['post_comment_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -1019,7 +1150,7 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     $comment = PostCommentModel::find($post_comment_id);
                     $comment->favorites = $comment->favorites - 1;
@@ -1039,8 +1170,49 @@
             }
         }
 
-        public function getCommentFavoriteOfUser()
+        public function removeCommentFavorite()
         {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['post_comment_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->removeLocalCommentFavorite();
+                    } else
+                    {
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_remove_local_comment_favorite';
+
+                        $commentFavorite = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'post_comment_id' => $_POST['post_comment_id']
+                            ]
+                        );
+
+                        return $commentFavorite;
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative de suppression de favoris de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de suppression de favoris de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
+            }
+        }
+
+        public function getLocalCommentFavoriteOfUser()
+        {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['post_comment_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -1049,7 +1221,7 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     $commentFavorite = PostCommentFavoriteModel::where('post_comment_id',$post_comment_id)
                     ->where('user_uniq_id', $uniq_id)->first();
@@ -1063,6 +1235,45 @@
             }else
             {
                 return $this->forbidden('noInfos');
+            }
+        }
+
+        public function getCommentFavoriteOfUser()
+        {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['post_comment_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->getLocalCommentFavoriteOfUser();
+                    } else
+                    {
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_get_local_user_comment_favorite';
+
+                        $commentFavorite = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'post_comment_id' => $_POST['post_comment_id']
+                            ]
+                        );
+
+                        return $commentFavorite;
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative de récupération de favoris de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération de favoris de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
             }
         }
 
@@ -1147,6 +1358,7 @@
             {
                 $token = htmlspecialchars($_POST['token']);
                 $uniq_id = htmlspecialchars($_POST['uniq_id']);
+                $remoteAddress = new RemoteAddress();
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
@@ -1154,12 +1366,49 @@
                 {
                     if(!empty($_POST['post_id']))
                     {
+                        $external_ip = exec('curl http://ipecho.net/plain; echo');
                         $post_id = htmlspecialchars($_POST['post_id']);
                         $comments = PostCommentModel::where('post_id', $post_id)->orderBy('favorites', 'desc')->take(3)->get();
 
                         foreach($comments as $comment)
                         {
-                            $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'avatar']);
+                            if(!empty($comment->link_id))
+                            {
+                                $linkController = new Link();
+                                $_POST['link_id'] = $comment->link_id;
+                                $link = json_decode($linkController->getLinkById(), true);
+                                $link = $link['link'];
+
+                                $bitsky_ip = json_decode($linkController->getIpOfKey($link['bitsky_key']), true);
+                                $bitsky_ip = $bitsky_ip['data'];
+
+                                $owner = json_decode($this->callAPI(
+                                    'POST',
+                                    'http://localhost/get_user_by_uniq_id',
+                                    [
+                                        'uniq_id' => $uniq_id,
+                                        'token' => $token,
+                                        'user_uniq_id' => $comment->owner_id,
+                                        'bitsky_ip' => $bitsky_ip
+                                    ]
+                                ), true);
+
+                                $comment->owner = $owner['user'];
+
+                                if($bitsky_ip != $remoteAddress->getIpAddress())
+                                {
+                                    $comment->fromStranger  = $external_ip;
+                                }
+                            } else
+                            {
+                                if($authorizedForeign)
+                                {
+                                    $comment->fromStranger  = $external_ip;
+                                }
+
+                                $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'avatar']);
+                            }
+
                             unset($comment->owner_id);
                         }
 
@@ -1218,8 +1467,10 @@
             }
         }
 
-        public function addComment()
+        public function addLocalComment()
         {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -1227,7 +1478,7 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     if(!empty($_POST['post_id']) && !empty($_POST['content']))
                     {
@@ -1240,19 +1491,48 @@
                         {
                             if(strlen($content) > 0)
                             {
-                                $comment = PostCommentModel::create([
-                                    'owner_id' => $uniq_id,
-                                    'post_id' => $post_id,
-                                    'content' => $content
-                                ]);
+                                $comment = null;
+
+                                if($authorizedForeign)
+                                {
+                                    $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
+                                    $linkController = new Link();
+                                    $key = json_decode($linkController->getKeyOfIp($bitsky_ip), true);
+                                    $key = $key['data'];
+                                    $link = \Model\Link::where('bitsky_key', $key)->first();
+
+                                    $comment = PostCommentModel::create([
+                                        'owner_id' => $uniq_id,
+                                        'post_id' => $post_id,
+                                        'content' => $content,
+                                        'link_id' => $link->id
+                                    ]);
+                                } else
+                                {
+                                    $comment = PostCommentModel::create([
+                                        'owner_id' => $uniq_id,
+                                        'post_id' => $post_id,
+                                        'content' => $content
+                                    ]);
+                                }
         
                                 if($comment != null)
                                 {
                                     $post->comments = $post->comments + 1;
                                     $post->save();
 
-                                    $comment->owner = UserModel::where('uniq_id', $uniq_id)->first(['firstname', 'lastname', 'avatar']);
-                                    unset($comment->owner_id);
+                                    $owner = json_decode($this->callAPI(
+                                        'POST',
+                                        'http://localhost/get_user_by_uniq_id',
+                                        [
+                                            'uniq_id' => $uniq_id,
+                                            'token' => $token,
+                                            'user_uniq_id' => $uniq_id,
+                                            'bitsky_ip' => !empty($bitsky_ip) ? $bitsky_ip : null
+                                        ]
+                                    ), true);
+
+                                    $comment->owner = $owner['user'];
 
                                     return json_encode(['success' => true, 'comment' => $comment]);
                                 }else
@@ -1282,8 +1562,52 @@
             }
         }
 
-        public function removeComment()
+        public function addComment()
         {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['post_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->addLocalComment();
+                    } else
+                    {
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_add_local_comment';
+                        $external_ip = exec('curl http://ipecho.net/plain; echo');
+
+                        $comment = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'post_id' => $_POST['post_id'],
+                                'content' => $_POST['content'],
+                                'bitsky_ip' => $external_ip
+                            ]
+                        );
+
+                        return $comment;
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative d\'ajout de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative d\'ajout de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
+            }
+        }
+
+        public function removeLocalComment()
+        {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['comment_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -1292,11 +1616,24 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
-                    $user = UserModel::where('uniq_id', $uniq_id)->first();
                     $comment = PostCommentModel::where('id', $comment_id)->first();
-                    if($user->rank == 2 || $user->uniq_id == $comment->owner_id)
+                    $statement = false;
+
+                    $user = UserModel::where('uniq_id', $uniq_id)->first();
+
+                    if(!empty($user))
+                    {
+                        $statement = $user->rank == 2 || $user->uniq_id == $comment->owner_id;
+                    }
+
+                    if($authorizedForeign && $_POST['uniq_id'] == $comment->owner_id)
+                    {
+                        $statement = true;
+                    }
+
+                    if($statement)
                     {
                         PostCommentFavoriteModel::where('post_comment_id', $comment_id)->delete();
                         
@@ -1319,8 +1656,6 @@
                         {
                             return $this->forbidden();
                         }
-
-                        return json_encode(['success' => true]);
                     }else
                     {
                         LogManager::store('[POST] Tentative de suppression d\'un commentaire sans autorisation (ID utilisateur: '.$uniq_id.')', 2);
@@ -1331,6 +1666,45 @@
                     LogManager::store('[POST] Tentative de suppression d\'un commentaire avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
                     return $this->forbidden('invalidToken');
                 }
+            }
+        }
+
+        public function removeComment()
+        {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['comment_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->removeLocalComment();
+                    } else
+                    {
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_remove_local_comment';
+
+                        $response = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'comment_id' => $_POST['comment_id']
+                            ]
+                        );
+
+                        return $response;
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative de suppression d\'un commentaire sans fournir son ID (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération des meilleurs commentaires avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
             }
         }
     }

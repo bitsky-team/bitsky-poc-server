@@ -40,7 +40,7 @@ class Log extends Controller
                             foreach($lines as $line) {
                                 if(!empty($line)) {
                                     $line = ltrim($line, '[');
-                                    $line = "[" . $file . " " . $line;
+                                        $line = "[" . $file . " " . $line;
                                     array_push($lines_content, $line);
                                 }
                             }

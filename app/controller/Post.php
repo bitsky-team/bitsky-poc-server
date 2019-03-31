@@ -1128,18 +1128,20 @@
                     }
                 } else
                 {
-                    LogManager::store('[POST] Tentative de récupération des commentaires d\'un post sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
                     return $this->forbidden('invalidToken');
                 }
             } else
             {
-                LogManager::store('[POST] Tentative de récupération des commentaires d\'un post avec un token invalide (ID utilisateur:  ?)', 2);
+                LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
                 return $this->forbidden('invalidToken');
             }
         }
 
-        public function removeCommentFavorite()
+        public function removeLocalCommentFavorite()
         {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['post_comment_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -1148,7 +1150,7 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     $comment = PostCommentModel::find($post_comment_id);
                     $comment->favorites = $comment->favorites - 1;
@@ -1168,8 +1170,49 @@
             }
         }
 
-        public function getCommentFavoriteOfUser()
+        public function removeCommentFavorite()
         {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['post_comment_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->removeLocalCommentFavorite();
+                    } else
+                    {
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_remove_local_comment_favorite';
+
+                        $commentFavorite = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'post_comment_id' => $_POST['post_comment_id']
+                            ]
+                        );
+
+                        return $commentFavorite;
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
+            }
+        }
+
+        public function getLocalCommentFavoriteOfUser()
+        {
+            $authorizedForeign = $this->isAuthorizedForeign();
+
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['post_comment_id']))
             {
                 $token = htmlspecialchars($_POST['token']);
@@ -1178,7 +1221,7 @@
 
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-                if($verify->success)
+                if($verify->success || $authorizedForeign)
                 {
                     $commentFavorite = PostCommentFavoriteModel::where('post_comment_id',$post_comment_id)
                     ->where('user_uniq_id', $uniq_id)->first();
@@ -1192,6 +1235,45 @@
             }else
             {
                 return $this->forbidden('noInfos');
+            }
+        }
+
+        public function getCommentFavoriteOfUser()
+        {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['post_comment_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->getLocalCommentFavoriteOfUser();
+                    } else
+                    {
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_get_local_user_comment_favorite';
+
+                        $commentFavorite = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'post_comment_id' => $_POST['post_comment_id']
+                            ]
+                        );
+
+                        return $commentFavorite;
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
             }
         }
 

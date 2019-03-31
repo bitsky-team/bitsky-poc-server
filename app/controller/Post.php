@@ -1272,7 +1272,7 @@
                 }
             } else
             {
-                LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
+                LogManager::store('[POST] Tentative de récupération de favoris de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
                 return $this->forbidden('invalidToken');
             }
         }

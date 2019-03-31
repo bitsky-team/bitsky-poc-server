@@ -29,7 +29,7 @@ class Log extends Controller
                 if($user['rank'] == 2)
                 {
                     $lines_content = [];
-                    $dir = dirname(__FILE__).'/../../../logs';
+                    $dir = dirname(__FILE__).'/../../logs';
                     $files = scandir($dir);
 
                     foreach ($files as $file) {
@@ -40,7 +40,7 @@ class Log extends Controller
                             foreach($lines as $line) {
                                 if(!empty($line)) {
                                     $line = ltrim($line, '[');
-                                    $line = "[" . $file . " " . $line;
+                                        $line = "[" . $file . " " . $line;
                                     array_push($lines_content, $line);
                                 }
                             }

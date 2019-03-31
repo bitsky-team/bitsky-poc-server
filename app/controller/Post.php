@@ -1064,7 +1064,7 @@
             }
         }
 
-        public function addCommentFavorite()
+        public function addLocalCommentFavorite()
         {
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['post_comment_id']))
             {
@@ -1094,6 +1094,45 @@
             }else
             {
                 return $this->forbidden('noInfos');
+            }
+        }
+
+        public function addCommentFavorite()
+        {
+            $check = $this->checkUserToken();
+
+            if(!empty($check))
+            {
+                if (!empty($_POST['post_comment_id']))
+                {
+                    if (empty($_POST['bitsky_ip']))
+                    {
+                        return $this->addLocalCommentFavorite();
+                    } else
+                    {
+                        $url = htmlspecialchars($_POST['bitsky_ip']) . '/post_add_local_comment_favorite';
+
+                        $commentFavorite = $this->callAPI(
+                            'POST',
+                            $url,
+                            [
+                                'uniq_id' => $check['uniq_id'],
+                                'token' => $check['token'],
+                                'post_comment_id' => $_POST['post_comment_id']
+                            ]
+                        );
+
+                        return $commentFavorite;
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative de récupération des commentaires d\'un post sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération des commentaires d\'un post avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
             }
         }
 

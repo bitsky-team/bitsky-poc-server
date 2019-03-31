@@ -48,6 +48,7 @@ return [
     [   'POST',      '/post_get_local_comments',            'post',          'getLocalComments'             ],
     [   'POST',      '/post_get_comments',                  'post',          'getComments'                  ],
     [   'POST',      '/post_get_user_comment_favorite',     'post',          'getCommentFavoriteOfUser'     ],
+    [   'POST',      '/post_add_local_comment_favorite',    'post',          'addLocalCommentFavorite'      ],
     [   'POST',      '/post_add_comment_favorite',          'post',          'addCommentFavorite'           ],
     [   'POST',      '/post_remove_comment_favorite',       'post',          'removeCommentFavorite'        ],
     [   'POST',      '/create_user',                        'user',          'createOrUpdate'               ],

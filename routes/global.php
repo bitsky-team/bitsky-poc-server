@@ -65,4 +65,9 @@ return [
     [   'GET',       '/get_registration_module_state',      'module',        'getRegistrationState'         ],
     [   'POST',      '/toggle_registration_module_state',   'module',        'toggleRegistrationState'      ],
     [   'POST',      '/get_logs',                           'log',           'get'                          ],
+    [   'POST',      '/get_files',                          'file',          'getFolderContent'             ],
+    [   'POST',      '/upload_files',                       'file',          'uploadFiles'                  ],
+    [   'POST',      '/create_folder',                      'file',          'createFolder'                 ],
+    [   'POST',      '/delete_item',                        'file',          'deleteItem'                   ],
+    [   'POST',      '/download_item',                      'file',          'downloadItem'                 ],
 ];

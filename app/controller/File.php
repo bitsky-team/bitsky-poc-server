@@ -45,7 +45,8 @@ class File extends Controller
                 if(file_exists($fullPath))
                 {
                     $date_updated = date ('d-m-Y H:i:s.', filemtime($fullPath)  + 3600 * $timezone);
-                    $itemsize = $this->filesizeConvert(filesize($fullPath));
+                    $itemsizeConverted = $this->filesizeConvert(filesize($fullPath));
+                    $itemsize = filesize($fullPath);
                     $extension = pathinfo($fullPath, PATHINFO_EXTENSION);
                     $ownerUniqId = FileModel::where('path', $fullPath)->first();
 
@@ -55,11 +56,11 @@ class File extends Controller
 
                         if(is_file($fullPath))
                         {
-                            array_push($items_content, ['name' => $item, 'type' => $extension, 'updated_at' => $date_updated, 'size' => $itemsize, 'owner' => $ownerInformations]);
+                            array_push($items_content, ['name' => $item, 'type' => $extension, 'updated_at' => $date_updated, 'converted_size' => $itemsizeConverted, 'size' => $itemsize, 'owner' => $ownerInformations]);
                         }
                         else if(is_dir($fullPath))
                         {
-                            array_push($items_content, ['name' => $item, 'type' => 'dossier', 'updated_at' => $date_updated, 'size' => $itemsize, 'owner' => $ownerInformations]);
+                            array_push($items_content, ['name' => $item, 'type' => 'dossier', 'updated_at' => $date_updated, 'converted_size' => $itemsizeConverted, 'size' => $itemsize, 'owner' => $ownerInformations]);
                         }
                     }
                 } else

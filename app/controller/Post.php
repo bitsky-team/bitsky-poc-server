@@ -6,6 +6,7 @@
     use \Kernel\LogManager;
     use \Controller\Auth;
     use \Kernel\RemoteAddress;
+    use Model\Notification;
     use \Model\Post as PostModel;
     use \Model\PostFavorite as PostFavoriteModel;
     use \Model\Tag as TagModel;
@@ -559,6 +560,18 @@
                         'post_id' => $post_id,
                         'user_uniq_id' => $uniq_id
                     ]);
+
+                    if($uniq_id != $post->owner_uniq_id)
+                    {
+                        Notification::create([
+                            'receiver_uniq_id' => $post->owner_uniq_id,
+                            'sender_uniq_id' => $uniq_id,
+                            'element_id' => $post_id,
+                            'element_type' => 'post',
+                            'action' => 'addFavorite'
+                        ]);
+                    }
+
                     return json_encode(['success' => true]);
                 }else
                 {
@@ -1087,6 +1100,17 @@
                         'user_uniq_id' => $uniq_id
                     ]);
 
+                    if($uniq_id != $comment->owner_uniq_id)
+                    {
+                        Notification::create([
+                            'receiver_uniq_id' => $comment->owner_id,
+                            'sender_uniq_id' => $uniq_id,
+                            'element_id' => $comment->post_id,
+                            'element_type' => 'comment',
+                            'action' => 'addFavorite'
+                        ]);
+                    }
+
                     return json_encode(['success' => true]);
                 }else
                 {
@@ -1199,12 +1223,12 @@
                     }
                 } else
                 {
-                    LogManager::store('[POST] Tentative de suppression de favoris de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
                     return $this->forbidden('invalidToken');
                 }
             } else
             {
-                LogManager::store('[POST] Tentative de suppression de favoris de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
+                LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
                 return $this->forbidden('invalidToken');
             }
         }
@@ -1267,12 +1291,12 @@
                     }
                 } else
                 {
-                    LogManager::store('[POST] Tentative de récupération de favoris de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
                     return $this->forbidden('invalidToken');
                 }
             } else
             {
-                LogManager::store('[POST] Tentative de récupération de favoris de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
+                LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
                 return $this->forbidden('invalidToken');
             }
         }
@@ -1507,6 +1531,18 @@
                                         'content' => $content,
                                         'link_id' => $link->id
                                     ]);
+
+                                    if($uniq_id != $post->owner_uniq_id)
+                                    {
+                                        Notification::create([
+                                            'receiver_uniq_id' => $post->owner_uniq_id,
+                                            'sender_uniq_id' => $uniq_id,
+                                            'element_id' => $post->id,
+                                            'element_type' => 'post',
+                                            'action' => 'addComment',
+                                            'link_id' => $link->id
+                                        ]);
+                                    }
                                 } else
                                 {
                                     $comment = PostCommentModel::create([
@@ -1514,6 +1550,17 @@
                                         'post_id' => $post_id,
                                         'content' => $content
                                     ]);
+
+                                    if($uniq_id != $post->owner_uniq_id)
+                                    {
+                                        Notification::create([
+                                            'receiver_uniq_id' => $post->owner_uniq_id,
+                                            'sender_uniq_id' => $uniq_id,
+                                            'element_id' => $post->id,
+                                            'element_type' => 'post',
+                                            'action' => 'addComment'
+                                        ]);
+                                    }
                                 }
         
                                 if($comment != null)
@@ -1594,12 +1641,12 @@
                     }
                 } else
                 {
-                    LogManager::store('[POST] Tentative d\'ajout de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    LogManager::store('[POST] Tentative d\'ajout de post sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
                     return $this->forbidden('invalidToken');
                 }
             } else
             {
-                LogManager::store('[POST] Tentative d\'ajout de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
+                LogManager::store('[POST] Tentative d\'ajout de post avec un token invalide (ID utilisateur:  ?)', 2);
                 return $this->forbidden('invalidToken');
             }
         }

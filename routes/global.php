@@ -65,4 +65,8 @@ return [
     [   'GET',       '/get_registration_module_state',      'module',        'getRegistrationState'         ],
     [   'POST',      '/toggle_registration_module_state',   'module',        'toggleRegistrationState'      ],
     [   'POST',      '/get_logs',                           'log',           'get'                          ],
+    [   'POST',      '/get_user_notifications',             'notification',  'getAll'                       ],
+    [   'POST',      '/delete_user_notifications',          'notification',  'deleteAll'                    ],
+    [   'POST',      '/read_user_notifications',            'notification',  'readAll'                      ],
+    [   'POST',      '/count_user_notifications',           'notification',  'count'                        ],
 ];

@@ -1,3 +1,6 @@
+CREATE DATABASE bitsky;
+USE bitsky;
+
 CREATE TABLE `linkedDevices` (
   `id` int(11) NOT NULL,
   `name` varchar(256) NOT NULL,

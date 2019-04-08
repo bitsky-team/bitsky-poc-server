@@ -15,7 +15,6 @@ dist: trusty
 sudo: required
 
 before_script:
-  - mysql -e 'CREATE DATABASE bitsky;'
   - mysql -u root --password="" < config/database.sql
   - composer update
   - php vendor/bin/phpunit tests

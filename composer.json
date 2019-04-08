@@ -15,8 +15,9 @@
         "vlucas/phpdotenv": "^2.5@dev",
         "illuminate/database": "*",
         "ext-json": "*",
-      "ext-curl": "*"
-    },
+        "ext-curl": "*",
+	"phpunit/phpunit": "^7"
+  },
     "require-dev": {
     },
     "autoload": {

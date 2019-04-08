@@ -62,7 +62,7 @@
                 'host'      => getenv('DB_HOST'),
                 'database'  => getenv('DB_DATABASE'),
                 'username'  => getenv('DB_USERNAME'),
-                'password'  => getenv('DB_PASSWORD'),
+                'password'  => null,
                 'port'      => getenv('DB_PORT'),
                 'charset'   => 'utf8',
                 'collation' => 'utf8_unicode_ci',

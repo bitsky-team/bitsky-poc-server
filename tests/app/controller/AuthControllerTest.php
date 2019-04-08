@@ -80,7 +80,7 @@
                 "uniq_id"  =>  $user['uniq_id'], 
                 "token"  =>  $token,
                 "avatar"  =>  'ABC',
-                "biography"  =>  'Occaecat fugiat commodo consectetur Lorem cupidatat nisi sit est et ullamco esse. Ex tempor aute nulla incididunt labore veniam reprehenderit laborum ullamco. Voluptate Lorem voluptate sint cillum ullamco. Ut anim cupidatat qui duis nulla anim id quis id ea irure ullamco. Qui Lorem ullamco non culpa sunt ipsum labore culpa labore excepteur cupidatat pariatur est. Nisi mollit veniam quis voluptate quis dolor dolore voluptate. Laboris ut irure ex eiusmod.',
+                "biography"  =>  'Cillum velit nostrud id eiusmod eiusmod nisi ut cillum esse occaecat Lorem cupidatat etdent.',
                 "sex" =>  'Homme',
                 "birthdate" =>  '12-12-2012',
                 "relationshipstatus" =>  'Célibataire',

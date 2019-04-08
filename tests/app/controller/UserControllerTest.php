@@ -102,7 +102,7 @@
             $_POST['rank'] = 1;
             $_POST['password'] = "securityfirst";
             $_POST['repeatPassword'] = "securityfirst";
-            $_POST['biography'] = 'Cillum velit nostrud id eiusmod eiusmod nisi ut cillum esse occaecat Lorem cupidatat et. Ipsum Lorem veniam voluptate sint dolor consectetur non in consequat ea esse laborum cupidatat eu. Ea excepteur consectetur excepteur aute et consectetur. Lorem aute ad cillum commodo qui incididunt officia est laborum tempor occaecat ullamco labore. Incididunt adipisicing proident ex cillum sunt culpa commodo Lorem quis cillum ullamco reprehenderit. Cillum elit ullamco tempor sunt adipisicing consectetur velit ex.';
+            $_POST['biography'] = 'Cillum velit nostrud id eiusmod eiusmod nisi ut cillum esse occaecat Lorem cupidatat etdent.';
             $_POST['sex'] = 'Homme';
             $_POST['job'] = 'Tester';
             $_POST['birthdate'] = "0000-00-00";
@@ -141,7 +141,7 @@
             $_POST['rank'] = 1;
             $_POST['password'] = "securityfirst";
             $_POST['repeatPassword'] = "securityfirst";
-            $_POST['biography'] = 'Cillum velit nostrud id eiusmod eiusmod nisi ut cillum esse occaecat Lorem cupidatat et. Ipsum Lorem veniam voluptate sint dolor consectetur non in consequat ea esse laborum cupidatat eu. Ea excepteur consectetur excepteur aute et consectetur. Lorem aute ad cillum commodo qui incididunt officia est laborum tempor occaecat ullamco labore. Incididunt adipisicing proident ex cillum sunt culpa commodo Lorem quis cillum ullamco reprehenderit. Cillum elit ullamco tempor sunt adipisicing consectetur velit ex.';
+            $_POST['biography'] = 'Cillum velit nostrud id eiusmod eiusmod nisi ut cillum esse occaecat Lorem cupidatat etdent.';
             $_POST['sex'] = 'Homme';
             $_POST['job'] = 'Tester';
             $_POST['birthdate'] = "0000-00-00";

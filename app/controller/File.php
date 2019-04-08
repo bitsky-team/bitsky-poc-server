@@ -14,7 +14,8 @@ class File extends Controller
         $this->authService = new Auth();
     }
 
-    function filesizeConvert($bytes, $decimals = 2) {
+    function filesizeConvert($bytes, $decimals = 2)
+    {
         $sz = 'BKMGTP';
         $factor = floor((strlen($bytes) - 1) / 3);
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
@@ -77,7 +78,8 @@ class File extends Controller
         }
     }
 
-    public function detectEncoding($filepath) {
+    public function detectEncoding($filepath)
+    {
         $output = array();
         exec('file -i ' . $filepath, $output);
         if (isset($output[0])){

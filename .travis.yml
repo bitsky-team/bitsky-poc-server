@@ -1,4 +1,7 @@
 language: php
+services:
+  - mysql
 before_script:
+  - mysql -e 'CREATE DATABASE bitsky;'
   - composer update
   - php vendor/bin/phpunit tests

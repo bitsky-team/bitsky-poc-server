@@ -129,5 +129,117 @@ class File extends Controller
         }
     }
 
-    // TODO: deleteItem
+    public function deleteItem()
+    {
+        $check = $this->checkUserToken();
+
+        if(!empty($check))
+        {
+            if(!empty($_POST['name']))
+            {
+                $path = $_POST['path'];
+                $name = $_POST['name'];
+
+                if(!strstr($path, '..') && !strstr($path, ';') && !strstr($name, '..') && !strstr($name, ';') && !empty(trim($name)))
+                {
+                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/files' . $path . '/';
+
+                    exec('rm -rf ' . $fullPath . $name);
+
+                    $file = FileModel::where('path', $fullPath . $name);
+
+                    if($file)
+                    {
+                        $file->delete();
+                    }
+
+                    if(!file_exists($fullPath . $name))
+                    {
+                        return json_encode(['success' => true, 'path' => $fullPath . $name]);
+                    }else
+                    {
+                        return $this->forbidden('unableToDeleteItem');
+                    }
+                }else
+                {
+                    $this->forbidden('invalidInput');
+                }
+            }else
+            {
+                return $this->forbidden('emptyInput');
+            }
+        }else
+        {
+            LogManager::store('[POST] Tentative de suppression d\'un item avec un token invalide (ID utilisateur: '.$check['uniq_id'].')', 2);
+            return $this->forbidden('invalidToken');
+        }
+    }
+
+    public function downloadItem()
+    {
+        $check = $this->checkUserToken();
+
+        if(!empty($check))
+        {
+            if(!empty($_POST['name']))
+            {
+                $path = $_POST['path'];
+                $name = $_POST['name'];
+
+                $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/files' . $path . '/' . $name;
+
+                if(!strstr($fullPath, '..') && !strstr($name, '..'))
+                {
+                    if (file_exists($fullPath)) {
+                        $encoding = $this->detectEncoding($fullPath);
+                        header('Content-Type: text/plain; charset=' . $encoding);
+                        header("Content-Transfer-Encoding: Binary");
+                        header("Content-disposition: attachment; filename=\"" . basename($fullPath) . "\"");
+                        readfile($fullPath);
+
+                    }else
+                    {
+                        return $this->forbidden('itemDoesNotExist');
+                    }
+                }else
+                {
+                    $this->forbidden('invalidInput');
+                }
+            }
+        }else
+        {
+            LogManager::store('[POST] Tentative de téléchargement d\'un item avec un token invalide (ID utilisateur: '.$check['uniq_id'].')', 2);
+            return $this->forbidden('invalidToken');
+        }
+    }
+
+    public function getStorageDevices()
+    {
+        $check = $this->checkUserToken();
+
+        if(!empty($check))
+        {
+            $devices = [];
+            $letters = ['a', 'b', 'c', 'd'];
+            $path = '/dev/sd';
+            $numberOfPorts = 4;
+
+            for($i = 1; $i <= $numberOfPorts; $i++)
+            {
+                foreach ($letters as $letter)
+                {
+                    if(file_exists($path . $letter . $i))
+                    {
+                        array_push($devices, $path . $letter . $i);
+                    }
+                }
+            }
+
+            return json_encode(['success' => true, 'devices' => $devices]);
+        }else
+        {
+            LogManager::store('[POST] Tentative de récupération d\'un appareil de stockage avec un token invalide (ID utilisateur: '.$check['uniq_id'].')', 2);
+            return $this->forbidden('invalidToken');
+        }
+    }
 }

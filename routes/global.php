@@ -70,4 +70,8 @@ return [
     [   'POST',      '/create_folder',                      'file',          'createFolder'                 ],
     [   'POST',      '/delete_item',                        'file',          'deleteItem'                   ],
     [   'POST',      '/download_item',                      'file',          'downloadItem'                 ],
+    [   'POST',      '/get_user_notifications',             'notification',  'getAll'                       ],
+    [   'POST',      '/delete_user_notifications',          'notification',  'deleteAll'                    ],
+    [   'POST',      '/read_user_notifications',            'notification',  'readAll'                      ],
+    [   'POST',      '/count_user_notifications',           'notification',  'count'                        ],
 ];

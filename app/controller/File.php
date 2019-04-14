@@ -34,19 +34,22 @@ class File extends Controller
             {
                 $path = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky/';
             }
+
             $items_content = [];
             $timezone = 1;
 
             if(!empty($_POST['path']))
             {
-                $path .= $_POST['path'];
+                $path .= str_replace('/', '', $_POST['path']);
             }
+
             $items = scandir($path);
             foreach ($items as $item)
             {
-                $fullPath = $path . $item;
+                $fullPath = $path . (!empty($_POST['path']) ? '/' : '') . $item;
                 clearstatcache();
                 if($item == '.' || $item == '..') continue;
+
                 if(file_exists($fullPath))
                 {
                     $date_updated = date ('d-m-Y H:i:s.', filemtime($fullPath)  + 3600 * $timezone);
@@ -106,10 +109,10 @@ class File extends Controller
 
                 if(!empty($_POST['device']))
                 {
-                    $rootPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/' . $_POST['device'] . '/';
+                    $rootPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/' . $_POST['device'] . (empty($path) ? '/' : '');
                 }else
                 {
-                    $rootPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky/';
+                    $rootPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky' . (empty($path) ? '/' : '');
                 }
 
                 if(!empty($path)) $rootPath .= $path . '/';

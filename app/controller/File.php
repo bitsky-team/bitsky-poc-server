@@ -27,7 +27,13 @@ class File extends Controller
 
         if(!empty($check))
         {
-            $path = $_SERVER['DOCUMENT_ROOT'] . '/files';
+            if(!empty($_POST['device']))
+            {
+                $path = $_SERVER['DOCUMENT_ROOT'] . '/devices/' . $_POST['device'] . '/';
+            }else
+            {
+                $path = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky/';
+            }
             $items_content = [];
             $timezone = 1;
 
@@ -35,12 +41,10 @@ class File extends Controller
             {
                 $path .= $_POST['path'];
             }
-
             $items = scandir($path);
-
             foreach ($items as $item)
             {
-                $fullPath = $path . DIRECTORY_SEPARATOR . $item;
+                $fullPath = $path . $item;
                 clearstatcache();
                 if($item == '.' || $item == '..') continue;
                 if(file_exists($fullPath))
@@ -99,7 +103,14 @@ class File extends Controller
             {
                 $path = $_POST['path'];
                 $files = $_POST['files'];
-                $rootPath = $_SERVER['DOCUMENT_ROOT'] . '/files' . (empty($path) ? '/' : '');
+
+                if(!empty($_POST['device']))
+                {
+                    $rootPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/' . $_POST['device'] . '/';
+                }else
+                {
+                    $rootPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky/';
+                }
 
                 if(!empty($path)) $rootPath .= $path . '/';
 
@@ -111,7 +122,11 @@ class File extends Controller
                         list(, $data)      = explode(',', $data);
                         $data = base64_decode($data);
                         file_put_contents($rootPath . $key, $data);
-                        chmod($rootPath . $key, 0664);
+
+                        if(empty($_POST['device']) || $_POST['device'] == 'bitsky')
+                        {
+                            chmod($rootPath . $key, 0664);
+                        }
 
                         $existingFile = FileModel::where('path', $rootPath . $key)->first();
                         if($existingFile != null)
@@ -148,23 +163,33 @@ class File extends Controller
                 $name = $_POST['name'];
                 $path = $_POST['path'];
 
-                $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/files' . $path;
-
-                mkdir($fullPath.'/'.$name);
-                chmod($fullPath.'/'.$name, 0775);
-
-                if(is_dir($fullPath.'/'.$name))
+                if(!empty($_POST['device']))
                 {
-                    $existingFile = FileModel::where('path', $fullPath.'/'.$name)->first();
+                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/' . $_POST['device'] . '/' . $path;
+                }else
+                {
+                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky/' . $path;
+                }
+
+                mkdir($fullPath.$name);
+
+                if(empty($_POST['device']) || $_POST['device'] == 'bitsky')
+                {
+                    chmod($fullPath.$name, 0775);
+                }
+
+                if(is_dir($fullPath.$name))
+                {
+                    $existingFile = FileModel::where('path', $fullPath.$name)->first();
                     if($existingFile != null)
                     {
                         $existingFile->delete();
                     }
                     FileModel::create([
-                        'path' => $fullPath.'/'.$name,
+                        'path' => $fullPath.$name,
                         'owner' => $check['uniq_id']
                     ]);
-                    return json_encode(['success' => true, 'path' => $fullPath.'/'.$name]);
+                    return json_encode(['success' => true, 'path' => $fullPath.$name]);
                 }else
                 {
                     return $this->forbidden('cannotCreateFolder');
@@ -193,7 +218,13 @@ class File extends Controller
 
                 if(!strstr($path, '..') && !strstr($path, ';') && !strstr($name, '..') && !strstr($name, ';') && !empty(trim($name)))
                 {
-                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/files' . $path . '/';
+                    if(!empty($_POST['device']))
+                    {
+                        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/' . $_POST['device'] . '/' . $path;
+                    }else
+                    {
+                        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky/' . $path;
+                    }
 
                     exec('rm -rf ' . $fullPath . $name);
 
@@ -237,7 +268,13 @@ class File extends Controller
                 $path = $_POST['path'];
                 $name = $_POST['name'];
 
-                $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/files' . $path . '/' . $name;
+                if(!empty($_POST['device']))
+                {
+                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/' . $_POST['device'] . '/' . $path . $name;
+                }else
+                {
+                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky/' . $path . $name;
+                }
 
                 if(!strstr($fullPath, '..') && !strstr($name, '..'))
                 {
@@ -260,6 +297,36 @@ class File extends Controller
         }else
         {
             LogManager::store('[POST] Tentative de téléchargement d\'un item avec un token invalide (ID utilisateur: '.$check['uniq_id'].')', 2);
+            return $this->forbidden('invalidToken');
+        }
+    }
+
+    public function getStorageDevices()
+    {
+        $check = $this->checkUserToken();
+
+        if(!empty($check))
+        {
+            $devices = [];
+            $letters = ['a', 'b', 'c', 'd'];
+            $path = '/dev/sd';
+            $numberOfPorts = 4;
+
+            for($i = 1; $i <= $numberOfPorts; $i++)
+            {
+                foreach ($letters as $letter)
+                {
+                    if(file_exists($path . $letter . $i))
+                    {
+                        array_push($devices, $path . $letter . $i);
+                    }
+                }
+            }
+
+            return json_encode(['success' => true, 'devices' => $devices]);
+        }else
+        {
+            LogManager::store('[POST] Tentative de récupération d\'un appareil de stockage avec un token invalide (ID utilisateur: '.$check['uniq_id'].')', 2);
             return $this->forbidden('invalidToken');
         }
     }

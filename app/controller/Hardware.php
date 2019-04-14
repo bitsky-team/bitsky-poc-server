@@ -93,4 +93,48 @@ class Hardware extends Controller
             return $this->forbidden('noInfos');
         }
     }
+
+    public function getStorageDevicesMemory()
+    {
+        $check = $this->checkUserToken();
+
+        if(!empty($check))
+        {
+            $devices = [];
+            $letters = ['a', 'b', 'c', 'd'];
+            $path = '/dev/sd';
+            $numberOfPorts = 4;
+
+            for($i = 1; $i <= $numberOfPorts; $i++)
+            {
+                foreach ($letters as $letter)
+                {
+                    if(file_exists($path . $letter . $i))
+                    {
+                        $name = $path . $letter . $i;
+
+                        $totalMem = str_replace(PHP_EOL, null, shell_exec("echo '{password}' | sudo -S df -h " . $name . "| awk 'NR > 1 {print $2}'"));
+
+                        $freeMem = str_replace(PHP_EOL, null, shell_exec("echo '{password}' | sudo -S df -h " . $name . "| awk 'NR > 1 {print $3}'"));
+
+                        $percent = str_replace(PHP_EOL, null, shell_exec("echo '{password}' | sudo -S df " . $name . "| awk 'NR > 1 {print $5}'"));
+
+                        if(!is_null($totalMem) && !is_null($freeMem) && !is_null($percent))
+                        {
+                            array_push($devices, ['name' => $name, 'totalMem' => $totalMem, 'usedMem' => $freeMem, 'percent' => $percent]);
+                        }else
+                        {
+                            $this->forbidden('nullResult');
+                        }
+                    }
+                }
+            }
+
+            return json_encode(['success' => true, 'devices' => $devices]);
+        }else
+        {
+            LogManager::store('[POST] Tentative de récupération des informations du périphérique de stockage avec un token invalide (ID utilisateur: '.$check['uniq_id'].')', 2);
+            return $this->forbidden('invalidToken');
+        }
+    }
 }

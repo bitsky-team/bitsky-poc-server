@@ -74,4 +74,11 @@ return [
     [   'POST',      '/delete_user_notifications',          'notification',  'deleteAll'                    ],
     [   'POST',      '/read_user_notifications',            'notification',  'readAll'                      ],
     [   'POST',      '/count_user_notifications',           'notification',  'count'                        ],
+    [   'POST',      '/get_files',                          'file',          'getFolderContent'             ],
+    [   'POST',      '/upload_files',                       'file',          'uploadFiles'                  ],
+    [   'POST',      '/create_folder',                      'file',          'createFolder'                 ],
+    [   'POST',      '/delete_item',                        'file',          'deleteItem'                   ],
+    [   'POST',      '/download_item',                      'file',          'downloadItem'                 ],
+    [   'POST',      '/get_devices',                        'file',          'getStorageDevices'            ],
+    [   'POST',      '/get_devices_memory',                 'hardware',      'getStorageDevicesMemory'      ],
 ];

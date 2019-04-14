@@ -903,14 +903,45 @@
                     }
 
                     $trends = array_merge($localTrends['trends'], $strangerTrends);
+                    $mixedTrends = [];
 
-                    usort($trends,function($first,$second){
+                    foreach($trends as $keyTrend => $trend)
+                    {
+                        if(empty($mixedTrends))
+                        {
+                            array_push($mixedTrends, $trend);
+                            unset($trends[$keyTrend]);
+                            continue;
+                        } else
+                        {
+                            $push = true;
+
+                            foreach($mixedTrends as $k => $mixedTrend)
+                            {
+                                if($trend['name'] == $mixedTrend['name'])
+                                {
+                                    $mixedTrends[$k]['score'] = $mixedTrend['score'] + $trend['score'];
+                                    $push = false;
+                                    break;
+                                }
+                            }
+
+                            if($push)
+                            {
+                                array_push($mixedTrends, $trend);
+                                unset($trends[$keyTrend]);
+                                continue;
+                            }
+                        }
+                    }
+
+                    usort($mixedTrends,function($first,$second){
                         return $first['score'] < $second['score'];
                     });
 
-                    $trends = array_slice($trends, 0, 3);
+                    $mixedTrends = array_slice($mixedTrends, 0, 3);
 
-                    return json_encode(['success' => true, 'trends' => $trends]);
+                    return json_encode(['success' => true, 'trends' => $mixedTrends]);
                 } else
                 {
                     LogManager::store('[POST] Impossible de récupérer les sujets du moment (ID utilisateur: ' . $uniq_id . ')', 2);

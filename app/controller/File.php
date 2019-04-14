@@ -99,7 +99,7 @@ class File extends Controller
             {
                 $path = $_POST['path'];
                 $files = $_POST['files'];
-                $rootPath = $_SERVER['DOCUMENT_ROOT'] . '/files/';
+                $rootPath = $_SERVER['DOCUMENT_ROOT'] . '/files' . (empty($path) ? '/' : '');
 
                 if(!empty($path)) $rootPath .= $path . '/';
 

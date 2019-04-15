@@ -51,8 +51,8 @@
             // Preparing data
             $user = UserModel::where('email', 'tester.test@std.heh.be')->first();
             $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
-            $user->token = password_hash($token, PASSWORD_BCRYPT);
-            $user->save();
+            ((object)$user)->token = password_hash($token, PASSWORD_BCRYPT);
+            ((object)$user)->save();
 
             $correctToken = $token;
             $incorrectToken = $token . 'incorrect';

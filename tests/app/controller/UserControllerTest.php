@@ -105,7 +105,7 @@
             $_POST['biography'] = 'Cillum velit nostrud id eiusmod eiusmod nisi ut cillum esse occaecat Lorem cupidatat etdent.';
             $_POST['sex'] = 'Homme';
             $_POST['job'] = 'Tester';
-            $_POST['birthdate'] = "0000-00-00";
+            $_POST['birthdate'] = "1980-01-01";
             $_POST['birthplace'] = 'TestLand';
             $_POST['relationshipstatus'] = 'Célibataire';
             $_POST['livingplace'] = 'TestLand';
@@ -144,7 +144,7 @@
             $_POST['biography'] = 'Cillum velit nostrud id eiusmod eiusmod nisi ut cillum esse occaecat Lorem cupidatat etdent.';
             $_POST['sex'] = 'Homme';
             $_POST['job'] = 'Tester';
-            $_POST['birthdate'] = "0000-00-00";
+            $_POST['birthdate'] = "1980-01-01";
             $_POST['birthplace'] = 'TestLand';
             $_POST['relationshipstatus'] = 'Célibataire';
             $_POST['livingplace'] = 'TestLand';

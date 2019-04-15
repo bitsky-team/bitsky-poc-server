@@ -52,12 +52,12 @@
             $user = null;
             $user = UserModel::where('email', 'tester.test@std.heh.be')->first();
             $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
-            $user->token = null;
+            $user->token = 'token';
             $user->token = password_hash($token, PASSWORD_BCRYPT);
             $user->save();
 
             $correctToken = $token;
-            $incorrectToken = $token . 'incorrect'; 
+            $incorrectToken = $token . 'incorrect';
 
             $resultCorrect = $authController->verify($correctToken, $user['uniq_id']);
             $resultCorrect = json_decode($resultCorrect, true);

@@ -89,14 +89,14 @@
                             $received['created_at'] = time();
                             $received['rank'] = 1;
                             $received['uniq_id'] = $id;
-                            $received['token'] = null;
+                            $received['token'] = '';
 
                             $user = User::create($received);
 
                             $authToken['id'] = $user['id'];
                             $authToken['lastname'] = $user['lastname'];
                             $authToken['firstname'] = $user['firstname'];
-                            $authToken['rank'] = $user['rank'];
+                            $authToken['rank'] = $user['rank']; 
                             $authToken['created_at'] = time();
                             $authToken['lifetime'] = 86400;
                             $authToken = JWT::encode($authToken);

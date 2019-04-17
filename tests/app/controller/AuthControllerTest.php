@@ -85,7 +85,7 @@
                 "avatar"  =>  'ABC',
                 "biography"  =>  'Cillum velit nostrud id eiusmod eiusmod nisi ut cillum esse occaecat Lorem cupidatat etdent.',
                 "sex" =>  'Homme',
-                "birthdate" =>  '12-12-2012',
+                "birthdate" =>  '1980-01-01',
                 "relationshipstatus" =>  'Célibataire',
                 "job" =>  'Testeur',
                 "birthplace" =>  'TestLand',

@@ -110,6 +110,7 @@
             $_POST['relationshipstatus'] = 'Célibataire';
             $_POST['livingplace'] = 'TestLand';
             $_POST['avatar'] = 'no';
+            $_POST['token'] = 'no';
 
             // Get Result
             $result = $userController->createOrUpdate();
@@ -149,6 +150,7 @@
             $_POST['relationshipstatus'] = 'Célibataire';
             $_POST['livingplace'] = 'TestLand';
             $_POST['avatar'] = 'no';
+            $_POST['token'] = 'no';
 
             // Get Result
             $result = $userController->createOrUpdate();

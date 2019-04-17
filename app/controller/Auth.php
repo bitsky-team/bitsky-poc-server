@@ -89,6 +89,8 @@
                             $received['created_at'] = time();
                             $received['rank'] = 1;
                             $received['uniq_id'] = $id;
+                            $received['token'] = '';
+                            $received['avatar'] = '';
 
                             $user = User::create($received);
 

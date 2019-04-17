@@ -526,7 +526,7 @@ class User extends Controller
     {
         // Deleting user
         $user->delete();
-        
+
         // Deleting tags used by user's posts
         foreach($posts->get() as $post) 
         {

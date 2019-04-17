@@ -5,7 +5,7 @@
     {
         public static function store($message, $level, $prepath = '/var/www/html/')
         {
-            if(!getenv('NO_LOGS')) {
+            if(!empty(getenv('NO_LOGS'))) {
                 $dir = $prepath . 'logs';
 
                 if (!file_exists($dir))
@@ -20,7 +20,7 @@
 
                 $fh = fopen($logFile, 'a');
                 fwrite($fh, $message."\n");
-
+ 
                 fclose($fh);
             }
         }

@@ -39,8 +39,10 @@
             $userController = new UserController();
 
             // Get User Account
+            $user = new \stdClass();
             $user = UserModel::where('rank', 1)->first();
             $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
+            $user->token = '';
             $user->token = password_hash($token, PASSWORD_BCRYPT);
             $user->save();
 
@@ -126,8 +128,10 @@
             $userController = new UserController();
 
             // Get User Account
+            $user = new \stdClass();
             $user = UserModel::where('rank', 1)->first();
             $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
+            $user->token = '';
             $user->token = password_hash($token, PASSWORD_BCRYPT);
             $user->save();
 

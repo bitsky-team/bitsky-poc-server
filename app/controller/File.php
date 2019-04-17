@@ -219,35 +219,59 @@ class File extends Controller
                 $path = $_POST['path'];
                 $name = $_POST['name'];
 
-                if(!strstr($path, '..') && !strstr($path, ';') && !strstr($name, '..') && !strstr($name, ';') && !empty(trim($name)))
+                $currentUser = UserModel::where('uniq_id', $check['uniq_id'])->first();
+
+                if(!empty($_POST['device']))
                 {
-                    if(!empty($_POST['device']))
+                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/' . $_POST['device'] . '/' . $path;
+                }else
+                {
+                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky/' . $path;
+                }
+
+                $ownerUniqId = FileModel::where('path', $fullPath . $name)->first();
+
+                if($currentUser['rank'] == 2 || $ownerUniqId->owner == $check['uniq_id'])
+                {
+                    $checkInputs = !strstr($path, '..')
+                        && !strstr($path, ';')
+                        && !strstr($name, '..')
+                        && !strstr($name, ';')
+                        && !empty(trim($name))
+                        && !strstr($name, '&')
+                        && !strstr($name, '&&')
+                        && !strstr($name, '|')
+                        && !strstr($name, '||')
+                        && !strstr($path, '&')
+                        && !strstr($path, '&&')
+                        && !strstr($path, '|')
+                        && !strstr($path, '||');
+
+                    if($checkInputs)
                     {
-                        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/' . $_POST['device'] . '/' . $path;
+                        exec('rm -rf ' . $fullPath . $name);
+
+                        $file = FileModel::where('path', $fullPath . $name);
+
+                        if($file)
+                        {
+                            $file->delete();
+                        }
+
+                        if(!file_exists($fullPath . $name))
+                        {
+                            return json_encode(['success' => true, 'path' => $fullPath . $name]);
+                        }else
+                        {
+                            return $this->forbidden('unableToDeleteItem');
+                        }
                     }else
                     {
-                        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky/' . $path;
-                    }
-
-                    exec('rm -rf ' . $fullPath . $name);
-
-                    $file = FileModel::where('path', $fullPath . $name);
-
-                    if($file)
-                    {
-                        $file->delete();
-                    }
-
-                    if(!file_exists($fullPath . $name))
-                    {
-                        return json_encode(['success' => true, 'path' => $fullPath . $name]);
-                    }else
-                    {
-                        return $this->forbidden('unableToDeleteItem');
+                        $this->forbidden('invalidInput');
                     }
                 }else
                 {
-                    $this->forbidden('invalidInput');
+                    return $this->forbidden('tooLowRankOrWrongOwner');
                 }
             }else
             {

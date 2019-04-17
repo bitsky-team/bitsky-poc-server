@@ -474,7 +474,7 @@ class User extends Controller
 
     public function delete()
     {
-        if (!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['user_id'])) 
+        if (!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['user_id']))
         {
             $token = htmlspecialchars($_POST['token']);
             $uniq_id = htmlspecialchars($_POST['uniq_id']);

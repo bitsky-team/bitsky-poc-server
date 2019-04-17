@@ -39,8 +39,7 @@
             $result = $authController->login();
             $result = json_decode($result, true);
 
-            // TODO: FIX this to assertTrue
-            $this->assertFalse($result['success']);
+            $this->assertTrue($result['success']);
         }
 
         public function testVerify() : void

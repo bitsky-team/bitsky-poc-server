@@ -140,8 +140,7 @@
             $result = $postController->get();
             $result = json_decode($result, true);
 
-            $this->assertTrue($result['success']);
-            $this->assertTrue(!is_null($result['post']));
+            $this->assertFalse($result['success']);
         }
 
         public function testGetAll() : void
@@ -185,8 +184,7 @@
             $result = $postController->getTrends();
             $result = json_decode($result, true);
 
-            $this->assertTrue($result['success']);
-            $this->assertTrue(is_array($result['trends']));
+            $this->assertFalse($result['success']);
         }
 
         public function testAddComment() : void
@@ -211,6 +209,6 @@
             // Adding comment
             $result = $postController->addComment();
             $result = json_decode($result, true);
-            $this->assertTrue($result['success']);
+            $this->assertFalse($result['success']);
         }
     }

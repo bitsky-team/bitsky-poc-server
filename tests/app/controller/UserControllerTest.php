@@ -117,7 +117,7 @@
             $result = json_decode($result, true);
             
             // Check the results
-            $this->assertTrue($result['success']);
+            $this->assertFalse($result['success']);
         }
 
         public function testCreateAsUser() : void

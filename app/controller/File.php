@@ -55,12 +55,12 @@ class File extends Controller
                     $date_updated = date ('d-m-Y H:i:s.', filemtime($fullPath)  + 3600 * $timezone);
                     $itemsizeConverted = $this->filesizeConvert(filesize($fullPath));
                     $itemsize = filesize($fullPath);
-                    $extension = pathinfo($fullPath, PATHINFO_EXTENSION);
+                    $extension = pathinfo($fullPath, PATHINFO_EXTENSION); 
                     $ownerUniqId = FileModel::where('path', $fullPath)->first();
 
                     if($ownerUniqId)
                     {
-                        $ownerInformations = UserModel::select('firstname', 'lastname','id')->where('uniq_id', $ownerUniqId->owner)->first();
+                        $ownerInformations = UserModel::select('firstname', 'lastname', 'id' , 'uniq_id')->where('uniq_id', $ownerUniqId->owner)->first();
 
                         if(is_file($fullPath))
                         {

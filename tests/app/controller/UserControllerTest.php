@@ -37,17 +37,18 @@
         {
             Kernel::bootEloquent();
             $userController = new UserController();
- 
+
             // Get User Account
             $user = UserModel::where('rank', 1)->first();
             $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
-            if (!isset($user))
-                $user = new \stdClass();
-            $user->token = password_hash($token, PASSWORD_BCRYPT);
-            $user->save();
+            if (isset($user))
+            {
+                $user->token = password_hash($token, PASSWORD_BCRYPT);
+                $user->save();
 
-            $_POST['token'] = $token;
-            $_POST['uniq_id'] = $user['uniq_id'];
+                $_POST['token'] = $token;
+                $_POST['uniq_id'] = $user['uniq_id'];
+            }
 
             // Get All Users
             $users = $userController->getAll();
@@ -130,31 +131,32 @@
             // Get User Account
             $user = UserModel::where('rank', 1)->first();
             $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
-            if (!isset($user))
-                $user = new \stdClass();
-            $user->token = password_hash($token, PASSWORD_BCRYPT);
-            $user->save();
+            if (isset($user))
+            {
+                $user->token = password_hash($token, PASSWORD_BCRYPT);
+                $user->save();
 
-            $_POST['token'] = $token;
-            $_POST['uniq_id'] = $user['uniq_id'];
-            $_POST['type'] = 'ADD';
+                $_POST['token'] = $token;
+                $_POST['uniq_id'] = $user['uniq_id'];
+                $_POST['type'] = 'ADD';
 
-            // Preparing data
-            $_POST['lastname'] = 'lastname';
-            $_POST['firstname'] = 'firstname';
-            $_POST['email'] = 'email@email.com';
-            $_POST['rank'] = 1;
-            $_POST['password'] = "securityfirst";
-            $_POST['repeatPassword'] = "securityfirst";
-            $_POST['biography'] = 'Cillum velit nostrud id eiusmod eiusmod nisi ut cillum esse occaecat Lorem cupidatat etdent.';
-            $_POST['sex'] = 'Homme';
-            $_POST['job'] = 'Tester';
-            $_POST['birthdate'] = "1980-01-01";
-            $_POST['birthplace'] = 'TestLand';
-            $_POST['relationshipstatus'] = 'Célibataire';
-            $_POST['livingplace'] = 'TestLand';
-            $_POST['avatar'] = 'no';
-            $_POST['token'] = 'no';
+                // Preparing data
+                $_POST['lastname'] = 'lastname';
+                $_POST['firstname'] = 'firstname';
+                $_POST['email'] = 'email@email.com';
+                $_POST['rank'] = 1;
+                $_POST['password'] = "securityfirst";
+                $_POST['repeatPassword'] = "securityfirst";
+                $_POST['biography'] = 'Cillum velit nostrud id eiusmod eiusmod nisi ut cillum esse occaecat Lorem cupidatat etdent.';
+                $_POST['sex'] = 'Homme';
+                $_POST['job'] = 'Tester';
+                $_POST['birthdate'] = "1980-01-01";
+                $_POST['birthplace'] = 'TestLand';
+                $_POST['relationshipstatus'] = 'Célibataire';
+                $_POST['livingplace'] = 'TestLand';
+                $_POST['avatar'] = 'no';
+                $_POST['token'] = 'no';
+            }
 
             // Get Result
             $result = $userController->createOrUpdate();

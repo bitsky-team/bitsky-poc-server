@@ -522,6 +522,71 @@ class User extends Controller
         }
     }
 
+    public function deleteByUser()
+    {
+        if (!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['user_id']) && !empty($_POST['password']))
+        {
+            $token = htmlspecialchars($_POST['token']);
+            $uniq_id = htmlspecialchars($_POST['uniq_id']);
+            $password = htmlspecialchars($_POST['password']);
+
+            $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+            if ($verify->success)
+            {
+                $passwordCheckLength = strlen($password) >= 8;
+
+                if($passwordCheckLength)
+                {
+                    $me = UserModel::where('uniq_id', $uniq_id)->first();
+                    $id = htmlspecialchars($_POST['user_id']);
+
+                    if(password_verify($password, $me['password']))
+                    {
+                        if($me['rank'] == 2 || $me['id'] == $id)
+                        {
+                            $user = UserModel::where('id', $id)->first();
+                            $posts = PostModel::where('owner_uniq_id', $user['uniq_id']);
+                            $postFavorites = PostFavoriteModel::where('user_uniq_id', $user['uniq_id']);
+                            $postComments = PostCommentModel::where('owner_id', $user['uniq_id']);
+                            $postCommentFavorites = PostCommentFavoriteModel::where('user_uniq_id', $user['uniq_id']);
+                            if($user['rank'] == 2)
+                            {
+                                if($user['uniq_id'] == $me['uniq_id'])
+                                {
+                                    $this->deleteAllUserData($user, $posts, $postFavorites, $postComments, $postCommentFavorites);
+                                    return json_encode(['success' => true]);
+                                } else
+                                {
+                                    return $this->forbidden('cantDeleteAnAdmin');
+                                }
+                            } else
+                            {
+                                $this->deleteAllUserData($user, $posts, $postFavorites, $postComments, $postCommentFavorites);
+                                return json_encode(['success' => true]);
+                            }
+                        }else
+                        {
+                            return $this->forbidden('invalidRank');
+                        }
+                    }else
+                    {
+                        return $this->forbidden('incorrectPassword');
+                    }
+                }else
+                {
+                    return $this->forbidden('tooShortPassword');
+                }
+            }else
+            {
+                return $this->forbidden('invalidToken');
+            }
+        }else
+        {
+            return $this->forbidden('noInfos');
+        }
+    }
+
     public function deleteAllUserData($user, $posts, $postFavorites, $postComments, $postCommentFavorites) 
     {
         // Deleting user

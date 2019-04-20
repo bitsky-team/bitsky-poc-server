@@ -56,6 +56,7 @@ return [
     [   'POST',      '/create_user',                        'user',          'createOrUpdate'               ],
     [   'POST',      '/update_user',                        'user',          'createOrUpdate'               ],
     [   'POST',      '/delete_user',                        'user',          'delete'                       ],
+    [   'POST',      '/delete_by_user',                     'user',          'deleteByUser'                 ],
     [   'POST',      '/get_allusers',                       'user',          'getAll'                       ],
     [   'POST',      '/get_user',                           'user',          'getById'                      ],
     [   'POST',      '/get_stranger_user',                  'user',          'strangerGetById'              ],

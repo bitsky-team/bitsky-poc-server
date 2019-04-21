@@ -38,15 +38,14 @@ class File extends Controller
             $items_content = [];
             $timezone = 1;
 
-            if(!empty($_POST['path']))
-            {
-                $path .= str_replace('/', '', $_POST['path']);
-            }
-
+            $path .= (!empty($_POST['path']) ? $_POST['path'] : null);
             $items = scandir($path);
+
             foreach ($items as $item)
             {
-                $fullPath = $path . (!empty($_POST['path']) ? '/' : '') . $item;
+                $fullPath = $path . '/' . $item;
+                $fullPath = preg_replace('#/+#','/', $fullPath);
+
                 clearstatcache();
                 if($item == '.' || $item == '..') continue;
 
@@ -77,7 +76,7 @@ class File extends Controller
                     return $this->forbidden('fileNotFound');
                 }
             }
-            return json_encode(['success' => true, 'content' => $items_content]);
+            return json_encode(['success' => true, 'content' => $items_content, 'path' => $fullPath]);
         } else
         {
             LogManager::store('[POST] Tentative de récupération des fichiers avec un token invalide (ID utilisateur: '.$check['uniq_id'].')', 2);
@@ -168,10 +167,10 @@ class File extends Controller
 
                 if(!empty($_POST['device']))
                 {
-                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/' . $_POST['device'] . '/' . $path;
+                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/' . $_POST['device'] . $path . '/';
                 }else
                 {
-                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky/' . $path;
+                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky' . $path . '/';
                 }
 
                 mkdir($fullPath.$name);
@@ -223,11 +222,13 @@ class File extends Controller
 
                 if(!empty($_POST['device']))
                 {
-                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/' . $_POST['device'] . '/' . $path;
+                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/' . $_POST['device'] . '/' . $path . '/';
                 }else
                 {
-                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky/' . $path;
+                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky/' . $path . '/';
                 }
+
+                $fullPath = preg_replace('#/+#','/', $fullPath);
 
                 $ownerUniqId = FileModel::where('path', $fullPath . $name)->first();
 

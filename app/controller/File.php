@@ -298,11 +298,13 @@ class File extends Controller
 
                 if(!empty($_POST['device']))
                 {
-                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/' . $_POST['device'] . '/' . $path . $name;
+                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/' . $_POST['device'] . '/' . $path . '/' . $name;
                 }else
                 {
-                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky/' . $path . $name;
+                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/devices/bitsky/' . $path . '/' . $name;
                 }
+
+                $fullPath = preg_replace('#/+#','/', $fullPath);
 
                 if(!strstr($fullPath, '..') && !strstr($name, '..'))
                 {

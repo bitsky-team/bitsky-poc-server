@@ -82,4 +82,5 @@ return [
     [   'POST',      '/download_item',                      'file',          'downloadItem'                 ],
     [   'POST',      '/get_devices',                        'file',          'getStorageDevices'            ],
     [   'POST',      '/get_devices_memory',                 'hardware',      'getStorageDevicesMemory'      ],
+    [   'POST',      '/update_post',                        'post',          'update'                       ],
 ];

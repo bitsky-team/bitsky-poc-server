@@ -685,12 +685,12 @@
                     }
                 } else
                 {
-                    LogManager::store('[POST] Tentative d\'ajout d\'un post en favoris sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    LogManager::store('[POST] Tentative de suppression d\'un post en favoris sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
                     return $this->forbidden('invalidToken');
                 }
             } else
             {
-                LogManager::store('[POST] Tentative d\'ajout d\'un post en favoris avec un token invalide (ID utilisateur: ?)', 2);
+                LogManager::store('[POST] Tentative de suppression d\'un post en favoris avec un token invalide (ID utilisateur: ?)', 2);
                 return $this->forbidden('invalidToken');
             }
         }
@@ -1216,7 +1216,7 @@
                     return json_encode(['success' => true]);
                 }else
                 {
-                    LogManager::store('[POST] Tentative d\'ajout d\'un commentaire en favoris avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    LogManager::store('[POST] Tentative de suppression d\'un commentaire en favoris avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
                     return $this->forbidden('invalidToken');
                 }
             }else
@@ -1254,12 +1254,12 @@
                     }
                 } else
                 {
-                    LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    LogManager::store('[POST] Tentative de suppression de favoris de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
                     return $this->forbidden('invalidToken');
                 }
             } else
             {
-                LogManager::store('[POST] Tentative d\'ajout de favoris de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
+                LogManager::store('[POST] Tentative de suppression de favoris de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
                 return $this->forbidden('invalidToken');
             }
         }
@@ -1672,12 +1672,12 @@
                     }
                 } else
                 {
-                    LogManager::store('[POST] Tentative d\'ajout de post sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+                    LogManager::store('[POST] Tentative d\'ajout de commentaire sans fournir un id de post (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
                     return $this->forbidden('invalidToken');
                 }
             } else
             {
-                LogManager::store('[POST] Tentative d\'ajout de post avec un token invalide (ID utilisateur:  ?)', 2);
+                LogManager::store('[POST] Tentative d\'ajout de commentaire avec un token invalide (ID utilisateur:  ?)', 2);
                 return $this->forbidden('invalidToken');
             }
         }
@@ -1781,7 +1781,58 @@
                 }
             } else
             {
-                LogManager::store('[POST] Tentative de récupération des meilleurs commentaires avec un token invalide (ID utilisateur:  ?)', 2);
+                LogManager::store('[POST] Tentative de suppression d\'un commentaire avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
+            }
+        }
+
+        public function update()
+        {
+            $check = $this->checkUserToken();
+
+            if($check)
+            {
+                $currentUser = UserModel::where('uniq_id', $check['uniq_id'])->first(['rank']);
+
+                if($currentUser && $currentUser['rank'] == 2)
+                {
+                    if(!empty($_POST['post_id']))
+                    {
+                        $post_id = htmlspecialchars($_POST['post_id']);
+
+                        $currentPost = PostModel::where('id', $post_id)->first();
+
+                        if($currentPost)
+                        {
+                            if(!empty($_POST['content']))
+                            {
+                                $post_content = htmlspecialchars($_POST['content']);
+
+                                $currentPost->content = $post_content;
+                                $currentPost->save();
+
+                                return json_encode(['success' => true]);
+                            }else
+                            {
+                                return $this->forbidden('contentRequired');
+                            }
+                        }else
+                        {
+                            return $this->forbidden('postNotFound');
+                        }
+                    }else
+                    {
+                        return $this->forbidden('postIdRequired');
+                    }
+                }else
+                {
+                    LogManager::store('[POST] Tentative de modification d\'une publication avec un rang trop bas (ID utilisateur: '.$check['uniq_id'].')', 2);
+                    return $this->forbidden('needAdminRights');
+                }
+
+            }else
+            {
+                LogManager::store('[POST] Tentative de modification d\'une publication avec un token invalide (ID utilisateur:  ?)', 2);
                 return $this->forbidden('invalidToken');
             }
         }

@@ -1836,4 +1836,55 @@
                 return $this->forbidden('invalidToken');
             }
         }
+
+        public function updateComment()
+        {
+            $check = $this->checkUserToken();
+
+            if($check)
+            {
+                $currentUser = UserModel::where('uniq_id', $check['uniq_id'])->first(['rank']);
+
+                if($currentUser && $currentUser['rank'] == 2)
+                {
+                    if(!empty($_POST['comment_id']))
+                    {
+                        $comment_id = htmlspecialchars($_POST['comment_id']);
+
+                        $currentComment = PostCommentModel::where('id', $comment_id)->first();
+
+                        if($currentComment)
+                        {
+                            if(!empty($_POST['content']))
+                            {
+                                $comment_content = htmlspecialchars($_POST['content']);
+
+                                $currentComment->content = $comment_content;
+                                $currentComment->save();
+
+                                return json_encode(['success' => true]);
+                            }else
+                            {
+                                return $this->forbidden('contentRequired');
+                            }
+                        }else
+                        {
+                            return $this->forbidden('commentNotFound');
+                        }
+                    }else
+                    {
+                        return $this->forbidden('commentIdRequired');
+                    }
+                }else
+                {
+                    LogManager::store('[POST] Tentative de modification d\'un commentaire avec un rang trop bas (ID utilisateur: '.$check['uniq_id'].')', 2);
+                    return $this->forbidden('needAdminRights');
+                }
+
+            }else
+            {
+                LogManager::store('[POST] Tentative de modification d\'un commentaire avec un token invalide (ID utilisateur:  ?)', 2);
+                return $this->forbidden('invalidToken');
+            }
+        }
     }

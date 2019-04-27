@@ -118,7 +118,7 @@
                 }
             } else
             {
-                return $this->forbidden('noInfos');
+                return $this->forbidden('noInformations');
             }
         }
 

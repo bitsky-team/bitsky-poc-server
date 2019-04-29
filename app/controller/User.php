@@ -218,7 +218,7 @@ class User extends Controller
             }
         } else
         {
-            LogManager::store('[POST] Tentative de récupération de l\'utilisateur sans fournir de uniq id (ID utilisateur: ' . $check['uniq_id'] . ')', 2);
+            LogManager::store('[POST] Tentative de récupération de l\'utilisateur sans fournir de uniq id (ID utilisateur: ?)', 2);
             return $this->forbidden('invalidUserId');
         }
     }

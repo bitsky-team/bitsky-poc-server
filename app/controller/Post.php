@@ -349,7 +349,7 @@
                         unset($user['uniq_id']);
                         $post->owner = $user;
 
-                        if($authorizedForeign) {
+                        if($authorizedForeign && !empty($_POST['bitsky_ip'])) {
                             $post->fromStranger = $_POST['bitsky_ip'];
                         }
 
@@ -1032,7 +1032,7 @@
                                 $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'rank', 'avatar']);
                             }
                         }
-                        
+
                         return json_encode(['success' => true, 'comments' => $comments]);
                     }else
                     {
@@ -1548,7 +1548,7 @@
                             {
                                 $comment = null;
 
-                                if($authorizedForeign)
+                                if($authorizedForeign && !empty($_POST['bitsky_ip']))
                                 {
                                     $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
                                     $linkController = new Link();

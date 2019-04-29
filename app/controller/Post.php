@@ -1548,7 +1548,7 @@
                             {
                                 $comment = null;
 
-                                if($authorizedForeign)
+                                if($authorizedForeign && !empty($_POST['bitsky_ip']))
                                 {
                                     $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
                                     $linkController = new Link();

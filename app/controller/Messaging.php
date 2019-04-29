@@ -88,10 +88,10 @@ class Messaging extends Controller
 
                 $conversation->lastMessage = Message::where('conversation_id', $conversation->id)->orderBy('created_at', 'desc')->first();
 
-                if($conversation->lastMessage->receiver_uniq_id == $check['uniq_id'] && $conversation->lastMessage->receiver_read == 0)
+                if(!empty($conversation->lastMessage) && $conversation->lastMessage->receiver_uniq_id == $check['uniq_id'] && $conversation->lastMessage->receiver_read == 0)
                 {
                     $conversation->unread = true;
-                }
+                } 
             }
 
 

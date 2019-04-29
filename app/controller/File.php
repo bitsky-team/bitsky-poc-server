@@ -14,6 +14,22 @@ class File extends Controller
         $this->authService = new Auth();
     }
 
+    function parsePath($path)
+    {
+        $path = strtolower(trim($path));
+
+        // adding - for spaces and union characters
+        $find = array(' ', '&', '\r\n', '\n', '+',',');
+        $path = str_replace ($find, '-', $path);
+
+        //delete and replace rest of special chars
+        $find = array('/[^a-z0-9\-<>]/', '/[\-]+/', '/<[^>]*>/');
+        $repl = array('', '-', '');
+        $path = preg_replace ($find, $repl, $path);
+
+        return $path;
+    }
+
     function filesizeConvert($bytes, $decimals = 2)
     {
         $sz = 'BKMGTP';

@@ -82,6 +82,11 @@ return [
     [   'POST',      '/download_item',                      'file',          'downloadItem'                 ],
     [   'POST',      '/get_devices',                        'file',          'getStorageDevices'            ],
     [   'POST',      '/get_devices_memory',                 'hardware',      'getStorageDevicesMemory'      ],
+    [   'POST',      '/create_conversation',                'messaging',     'createConversation'           ],
+    [   'POST',      '/get_conversations',                  'messaging',     'getConversations'             ],
+    [   'POST',      '/get_conversation',                   'messaging',     'getConversation'              ],
+    [   'POST',      '/send_message',                       'messaging',     'sendMessage'                  ],
+    [   'POST',      '/count_unread_messages',              'messaging',     'countUnreadMessages'          ],
     [   'POST',      '/update_post',                        'post',          'update'                       ],
     [   'POST',      '/update_comment',                     'post',          'updateComment'                ],
 ];

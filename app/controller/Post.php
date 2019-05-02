@@ -1131,13 +1131,13 @@
                         'user_uniq_id' => $uniq_id
                     ]);
 
-                    if($uniq_id != $comment->owner_uniq_id)
+                    if($uniq_id != $comment->owner_id)
                     {
                         Notification::create([
                             'receiver_uniq_id' => $comment->owner_id,
                             'sender_uniq_id' => $uniq_id,
                             'element_id' => $comment->post_id,
-                            'element_type' => 'comment',
+                            'element_type' => 'post',
                             'action' => 'addFavorite'
                         ]);
                     }
@@ -1548,7 +1548,7 @@
                             {
                                 $comment = null;
 
-                                if($authorizedForeign && !empty($_POST['bitsky_ip']))
+                                if($authorizedForeign)
                                 {
                                     $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
                                     $linkController = new Link();

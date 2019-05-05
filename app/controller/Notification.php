@@ -4,12 +4,59 @@ namespace Controller;
 
 use \Kernel\LogManager;
 use \Model\User;
-use \Model\Post;
-use \Model\PostComment;
-
+use Kernel\RemoteAddress;
 
 class Notification extends Controller
 {
+    public function create()
+    {
+        $check = $this->checkUserToken();
+
+        if(!empty($check))
+        {
+            $authorizedForeign = $this->isAuthorizedForeign();
+            $remoteAddress = new RemoteAddress();
+
+            if(
+                !empty($_POST['sender_uniq_id']) &&
+                !empty($_POST['receiver_uniq_id']) &&
+                !empty($_POST['element_id']) &&
+                !empty($_POST['element_type']) &&
+                !empty($_POST['action']) &&
+                !empty($_POST['link_id']) &&
+                $authorizedForeign
+            )
+            {
+                $sender = htmlspecialchars($_POST['sender_uniq_id']);
+                $receiver = htmlspecialchars($_POST['receiver_uniq_id']);
+                $elementId = htmlspecialchars($_POST['element_id']);
+                $elementType = htmlspecialchars($_POST['element_type']);
+                $action = htmlspecialchars($_POST['action']);
+                $linkId = htmlspecialchars($_POST['link_id']);
+
+                $notification = Notification::create([
+                    'receiver_uniq_id' => $receiver,
+                    'sender_uniq_id' => $sender,
+                    'element_id' => $elementId,
+                    'element_type' => $elementType,
+                    'action' => $action,
+                    'element_link_id' => $remoteAddress->getIpAddress(),
+                    'sender_link_id' => $linkId
+                ]);
+
+                return json_encode(['success' => true, 'notification' => $notification]);
+            } else
+            {
+                LogManager::store('[POST] Tentative de création de notifications avec des paramètres incorrects (ID utilisateur:  '.$check["uniq_id"].')', 2);
+                return $this->forbidden('invalidParams');
+            }
+        } else
+        {
+            LogManager::store('[POST] Tentative de lecture des notifications d\'un utilisateur avec un token invalide (ID utilisateur:  ?)', 2);
+            return $this->forbidden('invalidToken');
+        }
+    }
+
     public function getAll()
     {
         $check = $this->checkUserToken();

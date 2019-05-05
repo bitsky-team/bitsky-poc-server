@@ -30,12 +30,10 @@ class Notification extends Controller
                 switch($notification['element_type'])
                 {
                     case 'post':
-                        $notification['element'] = Post::where('id', $notification['element_id'])->first();
-                        $notification['elementMessage'] = 'publication';
+                        $notification['element_message'] = 'publication';
                         break;
                     case 'comment':
-                        $notification['element'] = PostComment::where('post_id', $notification['element_id'])->first();
-                        $notification['elementMessage'] = 'commentaire';
+                        $notification['element_message'] = 'commentaire';
                         break;
                     default:
                         $notification['element'] = 'typeNotHandled';

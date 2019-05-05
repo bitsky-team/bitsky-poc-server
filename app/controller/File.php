@@ -358,13 +358,24 @@ class File extends Controller
             $path = '/dev/sd';
             $numberOfPorts = 4;
 
-            for($i = 1; $i <= $numberOfPorts; $i++)
+            foreach ($letters as $letter)
             {
-                foreach ($letters as $letter)
+                $noMatch = true;
+
+                for($i = 1; $i <= $numberOfPorts; $i++)
                 {
                     if(file_exists($path . $letter . $i))
                     {
+                        $noMatch = false;
                         array_push($devices, $path . $letter . $i);
+                    }
+                }
+
+                if($noMatch)
+                {
+                    if(file_exists($path . $letter))
+                    {
+                        array_push($devices, $path . $letter);
                     }
                 }
             }

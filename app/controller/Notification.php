@@ -4,7 +4,6 @@ namespace Controller;
 
 use \Kernel\LogManager;
 use \Model\User;
-use Kernel\RemoteAddress;
 
 class Notification extends Controller
 {
@@ -15,7 +14,6 @@ class Notification extends Controller
         if(!empty($check))
         {
             $authorizedForeign = $this->isAuthorizedForeign();
-            $remoteAddress = new RemoteAddress();
 
             if(
                 !empty($_POST['sender_uniq_id']) &&
@@ -40,8 +38,7 @@ class Notification extends Controller
                     'element_id' => $elementId,
                     'element_type' => $elementType,
                     'action' => $action,
-                    'element_link_id' => $remoteAddress->getIpAddress(),
-                    'sender_link_id' => $linkId
+                    'link_id' => $linkId
                 ]);
 
                 return json_encode(['success' => true, 'notification' => $notification]);
@@ -67,9 +64,39 @@ class Notification extends Controller
 
             foreach($notifications as $notification)
             {
+                $notification['sender'] = null;
+
+                if(!empty($notification->link_id))
+                {
+                    $linkController = new Link();
+                    $_POST['link_id'] = $notification->link_id;
+                    $link = json_decode($linkController->getLinkById(), true);
+                    $link = $link['link'];
+
+                    $bitsky_ip = json_decode($linkController->getIpOfKey($link['bitsky_key']), true);
+                    $bitsky_ip = $bitsky_ip['data'];
+
+                    $notification['stranger'] = $bitsky_ip;
+
+                    $owner = json_decode($this->callAPI(
+                        'POST',
+                        'http://localhost/get_user_by_uniq_id',
+                        [
+                            'uniq_id' => $check['uniq_id'],
+                            'token' => $check['token'],
+                            'user_uniq_id' => $notification->sender_uniq_id,
+                            'bitsky_ip' => $bitsky_ip
+                        ]
+                    ), true);
+
+                    $notification['sender'] = $owner['user'];
+                } else
+                {
+                    $notification['sender'] = User::where('uniq_id', $notification['sender_uniq_id'])->first();
+                    unset($notification['sender']['password']);
+                }
+
                 // Get concerned users
-                $notification['sender'] = User::where('uniq_id', $notification['sender_uniq_id'])->first();
-                unset($notification['sender']['password']);
                 $notification['receiver'] = User::where('uniq_id', $notification['receiver_uniq_id'])->first();
                 unset($notification['receiver']['password']);
 

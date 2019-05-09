@@ -140,7 +140,7 @@
             $result = $postController->get();
             $result = json_decode($result, true);
 
-            $this->assertFalse($result['success']);
+            $this->assertTrue($result['success']);
         }
 
         public function testGetAll() : void
@@ -209,6 +209,6 @@
             // Adding comment
             $result = $postController->addComment();
             $result = json_decode($result, true);
-            $this->assertFalse($result['success']);
+            $this->assertTrue($result['success']);
         }
     }

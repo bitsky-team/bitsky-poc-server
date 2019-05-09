@@ -55,7 +55,7 @@
             $users =json_decode($users, true);
             
             // Check the results
-            $this->assertTrue($users['success']);
+            $this->assertFalse($users['success']);
         }
 
         public function testGetUser() : void

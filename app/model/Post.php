@@ -11,6 +11,7 @@
         protected $fillable = [
             'owner_uniq_id',
             'content',
-            'tag_id'
+            'tag_id',
+            'picture'
         ];
     }

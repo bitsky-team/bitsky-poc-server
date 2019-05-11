@@ -998,32 +998,47 @@ class Post extends Controller
 
     public function getAllComments()
     {
-        if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+        $check = $this->checkUserToken();
+
+        if(!empty($check))
         {
-            $token = htmlspecialchars($_POST['token']);
-            $uniq_id = htmlspecialchars($_POST['uniq_id']);
+            $comments = PostCommentModel::all();
 
-            $verify = json_decode($this->authService->verify($token, $uniq_id));
-
-            if($verify->success)
+            foreach($comments as $comment)
             {
-                $comments = PostCommentModel::orderBy('created_at', 'asc')->get();
-
-                foreach($comments as $comment)
+                if(!empty($comment->link_id))
                 {
-                    $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'avatar']);
-                    unset($comment->owner_id);
-                }
+                    $linkController = new Link();
+                    $_POST['link_id'] = $comment->link_id;
+                    $link = json_decode($linkController->getLinkById(), true);
+                    $link = $link['link'];
 
-                return json_encode(['success' => true, 'comments' => $comments]);
-            }else
-            {
-                LogManager::store('[POST] Tentative de récupération des commentaires avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
-                return $this->forbidden('invalidToken');
+                    $bitsky_ip = json_decode($linkController->getIpOfKey($link['bitsky_key']), true);
+                    $bitsky_ip = $bitsky_ip['data'];
+
+                    $owner = json_decode($this->callAPI(
+                        'POST',
+                        'http://localhost/get_user_by_uniq_id',
+                        [
+                            'uniq_id' => $check['uniq_id'],
+                            'token' => $check['token'],
+                            'user_uniq_id' => $comment->owner_id,
+                            'bitsky_ip' => $bitsky_ip
+                        ]
+                    ), true);
+
+                    $comment->owner = $owner['user'];
+                } else
+                {
+                    $comment->owner = UserModel::where('uniq_id', $comment->owner_id)->first(['id', 'firstname', 'lastname', 'rank', 'avatar']);
+                }
             }
-        }else
+
+            return json_encode(['success' => true, 'comments' => $comments]);
+        } else
         {
-            return $this->forbidden('noInfos');
+            LogManager::store('[POST] Tentative de récupération des commentaires avec un token invalide (ID utilisateur: ?)', 2);
+            return $this->forbidden('invalidToken');
         }
     }
 
@@ -1031,7 +1046,7 @@ class Post extends Controller
     {
         $authorizedForeign = $this->isAuthorizedForeign();
 
-        if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+        if((!empty($_POST['token']) && !empty($_POST['uniq_id'])) || $authorizedForeign)
         {
             $token = htmlspecialchars($_POST['token']);
             $uniq_id = htmlspecialchars($_POST['uniq_id']);

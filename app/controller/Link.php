@@ -233,6 +233,40 @@
             }
         }
 
+        public function getActiveLinksNameAndIP()
+        {
+            if(!empty($_POST['token']) && !empty($_POST['uniq_id']))
+            {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+                $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+                if($verify->success)
+                {
+                    $links = LinkModel::where('active', 1)->get();
+
+                    foreach($links as $link)
+                    {
+                        $request = json_decode($this->getIpOfKey($link->bitsky_key), true);
+                        $link->ip = $request['data'];
+
+                        unset($link->active);
+                        unset($link->bitsky_key);
+                    }
+
+                    return json_encode(['success' => true, 'links' => $links]);
+                }else
+                {
+                    LogManager::store('[POST] Tentative de récupération des liaisons avec un token invalide (ID utilisateur: '.$uniq_id.')', 2);
+                    return $this->forbidden('invalidToken');
+                }
+            }else
+            {
+                return $this->forbidden('noInfos');
+            }
+        }
+
         public function getLink()
         {
             if(!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['bitsky_key']))

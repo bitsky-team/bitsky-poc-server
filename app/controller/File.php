@@ -14,22 +14,6 @@ class File extends Controller
         $this->authService = new Auth();
     }
 
-    function parsePath($path)
-    {
-        $path = strtolower(trim($path));
-
-        // adding - for spaces and union characters
-        $find = array(' ', '&', '\r\n', '\n', '+',',');
-        $path = str_replace ($find, '-', $path);
-
-        //delete and replace rest of special chars
-        $find = array('/[^a-z0-9\-<>]/', '/[\-]+/', '/<[^>]*>/');
-        $repl = array('', '-', '');
-        $path = preg_replace ($find, $repl, $path);
-
-        return $path;
-    }
-
     function filesizeConvert($bytes, $decimals = 2)
     {
         $sz = 'BKMGTP';
@@ -37,11 +21,23 @@ class File extends Controller
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
     }
 
-    public function getFolderContent()
+    public function detectEncoding($filepath)
     {
+        $output = array();
+        exec('file -i ' . $filepath, $output);
+        if (isset($output[0])){
+            $ex = explode('charset=', $output[0]);
+            return isset($ex[1]) ? $ex[1] : null;
+        }
+        return null;
+    }
+
+    public function localGetFolderContent()
+    {
+        $authorizedForeign = $this->isAuthorizedForeign();
         $check = $this->checkUserToken();
 
-        if(!empty($check))
+        if(!empty($check) || $authorizedForeign)
         {
             if(!empty($_POST['device']))
             {
@@ -70,12 +66,39 @@ class File extends Controller
                     $date_updated = date ('d-m-Y H:i:s.', filemtime($fullPath)  + 3600 * $timezone);
                     $itemsizeConverted = $this->filesizeConvert(filesize($fullPath));
                     $itemsize = filesize($fullPath);
-                    $extension = pathinfo($fullPath, PATHINFO_EXTENSION); 
+                    $extension = pathinfo($fullPath, PATHINFO_EXTENSION);
                     $ownerUniqId = FileModel::where('path', $fullPath)->first();
 
                     if($ownerUniqId)
                     {
-                        $ownerInformations = UserModel::select('firstname', 'lastname', 'id' , 'uniq_id')->where('uniq_id', $ownerUniqId->owner)->first();
+                        $ownerInformations = null;
+
+                        if(!empty($ownerUniqId->link_id))
+                        {
+                            $linkController = new Link();
+                            $_POST['link_id'] = $ownerUniqId->link_id;
+                            $link = json_decode($linkController->getLinkById(), true);
+                            $link = $link['link'];
+
+                            $bitsky_ip = json_decode($linkController->getIpOfKey($link['bitsky_key']), true);
+                            $bitsky_ip = $bitsky_ip['data'];
+
+                            $owner = json_decode($this->callAPI(
+                                'POST',
+                                'http://localhost/get_user_by_uniq_id',
+                                [
+                                    'uniq_id' => $_POST['uniq_id'],
+                                    'token' => $_POST['token'],
+                                    'user_uniq_id' => $ownerUniqId->owner,
+                                    'bitsky_ip' => $bitsky_ip
+                                ]
+                            ), true);
+
+                            $ownerInformations = $owner['user'];
+                        } else
+                        {
+                            $ownerInformations = UserModel::select('firstname', 'lastname', 'id' , 'uniq_id')->where('uniq_id', $ownerUniqId->owner)->first();
+                        }
 
                         if(is_file($fullPath))
                         {
@@ -88,34 +111,43 @@ class File extends Controller
                     }
                 } else
                 {
-                    LogManager::store('[POST] Tentative de récupération d\'un fichier inexistant (ID utilisateur: '.$check['uniq_id'].', chemin: '.$fullPath.')', 2);
+                    LogManager::store('[POST] Tentative de récupération d\'un fichier inexistant (ID utilisateur: '.$_POST['uniq_id'].', chemin: '.$fullPath.')', 2);
                     return $this->forbidden('fileNotFound');
                 }
             }
             return json_encode(['success' => true, 'content' => $items_content, 'path' => $fullPath]);
         } else
         {
-            LogManager::store('[POST] Tentative de récupération des fichiers avec un token invalide (ID utilisateur: '.$check['uniq_id'].')', 2);
+            LogManager::store('[POST] Tentative de récupération des fichiers avec un token invalide (ID utilisateur: '.$_POST['uniq_id'].')', 2);
             return $this->forbidden('invalidToken');
         }
     }
 
-    public function detectEncoding($filepath)
+    public function getFolderContent()
     {
-        $output = array();
-        exec('file -i ' . $filepath, $output);
-        if (isset($output[0])){
-            $ex = explode('charset=', $output[0]);
-            return isset($ex[1]) ? $ex[1] : null;
+        if (empty($_POST['bitsky_ip']))
+        {
+            return $this->localGetFolderContent();
+        } else
+        {
+            $url = htmlspecialchars($_POST['bitsky_ip']) . '/local_get_files';
+
+            $files = $this->callAPI(
+                'POST',
+                $url,
+                $_POST
+            );
+
+            return $files;
         }
-        return null;
     }
 
-    public function uploadFiles()
+    public function localUploadFiles()
     {
         $check = $this->checkUserToken();
+        $authorizedForeign = $this->isAuthorizedForeign();
 
-        if(!empty($check))
+        if(!empty($check) || $authorizedForeign)
         {
             if(!empty($_POST['files']))
             {
@@ -131,6 +163,10 @@ class File extends Controller
                 }
 
                 if(!empty($path)) $rootPath .= $path . '/';
+
+                if(is_string($files)) {
+                    $files = json_decode($files, true);
+                }
 
                 foreach ($files as $file)
                 {
@@ -151,10 +187,27 @@ class File extends Controller
                         {
                             $existingFile->delete();
                         }
-                        FileModel::create([
-                            'path' => $rootPath . $key,
-                            'owner' => $check['uniq_id']
-                        ]);
+
+                        if($authorizedForeign && !empty($_POST['bitsky_ip']))
+                        {
+                            $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
+                            $linkController = new Link();
+                            $bitskyKey = json_decode($linkController->getKeyOfIp($bitsky_ip), true);
+                            $bitskyKey = $bitskyKey['data'];
+                            $link = \Model\Link::where('bitsky_key', $bitskyKey)->first();
+
+                            FileModel::create([
+                                'path' => $rootPath . $key,
+                                'owner' => $_POST['uniq_id'],
+                                'link_id' => $link->id
+                            ]);
+                        } else
+                        {
+                            FileModel::create([
+                                'path' => $rootPath . $key,
+                                'owner' => $_POST['uniq_id']
+                            ]);
+                        }
                     }
                 }
 
@@ -170,11 +223,35 @@ class File extends Controller
         }
     }
 
-    public function createFolder()
+    public function uploadFiles()
     {
+        if (empty($_POST['bitsky_ip']))
+        {
+            return $this->localUploadFiles();
+        } else
+        {
+            $url = htmlspecialchars($_POST['bitsky_ip']) . '/local_upload_files';
+            $external_ip = exec('curl http://ipecho.net/plain; echo');
+
+            $_POST['files'] = json_encode($_POST['files']);
+            $_POST['bitsky_ip'] = $external_ip;
+
+            $file = $this->callAPI(
+                'POST',
+                $url,
+                $_POST
+            );
+
+            return $file;
+        }
+    }
+
+    public function localCreateFolder()
+    {
+        $authorizedForeign = $this->isAuthorizedForeign();
         $check = $this->checkUserToken();
 
-        if(!empty($check))
+        if(!empty($check) || $authorizedForeign)
         {
             if(!empty($_POST['name']))
             {
@@ -205,7 +282,7 @@ class File extends Controller
                     }
                     FileModel::create([
                         'path' => $fullPath.$name,
-                        'owner' => $check['uniq_id']
+                        'owner' => $_POST['uniq_id']
                     ]);
                     return json_encode(['success' => true, 'path' => $fullPath.$name]);
                 }else
@@ -218,16 +295,36 @@ class File extends Controller
             }
         } else
         {
-            LogManager::store('[POST] Tentative de création de dossier avec un token invalide (ID utilisateur: '.$check['uniq_id'].')', 2);
+            LogManager::store('[POST] Tentative de création de dossier avec un token invalide (ID utilisateur: '.$_POST['uniq_id'].')', 2);
             return $this->forbidden('invalidToken');
         }
     }
 
-    public function deleteItem()
+    public function createFolder()
     {
+        if (empty($_POST['bitsky_ip']))
+        {
+            return $this->localCreateFolder();
+        } else
+        {
+            $url = htmlspecialchars($_POST['bitsky_ip']) . '/local_create_folder';
+
+            $file = $this->callAPI(
+                'POST',
+                $url,
+                $_POST
+            );
+
+            return $file;
+        }
+    }
+
+    public function localDeleteItem()
+    {
+        $authorizedForeign = $this->isAuthorizedForeign();
         $check = $this->checkUserToken();
 
-        if(!empty($check))
+        if(!empty($check || $authorizedForeign))
         {
             if(!empty($_POST['name']))
             {
@@ -248,7 +345,7 @@ class File extends Controller
 
                 $ownerUniqId = FileModel::where('path', $fullPath . $name)->first();
 
-                if($currentUser['rank'] == 2 || $ownerUniqId->owner == $check['uniq_id'])
+                if($currentUser['rank'] == 2 || $ownerUniqId->owner == $_POST['uniq_id'])
                 {
                     $checkInputs = !strstr($path, '..')
                         && !strstr($path, ';')
@@ -284,7 +381,7 @@ class File extends Controller
                         }
                     }else
                     {
-                        $this->forbidden('invalidInput');
+                        return $this->forbidden('invalidInput');
                     }
                 }else
                 {
@@ -301,11 +398,31 @@ class File extends Controller
         }
     }
 
-    public function downloadItem()
+    public function deleteItem()
     {
+        if (empty($_POST['bitsky_ip']))
+        {
+            return $this->localDeleteItem();
+        } else
+        {
+            $url = htmlspecialchars($_POST['bitsky_ip']) . '/local_delete_item';
+
+            $file = $this->callAPI(
+                'POST',
+                $url,
+                $_POST
+            );
+
+            return $file;
+        }
+    }
+
+    public function localDownloadItem()
+    {
+        $authorizedForeign = $this->isAuthorizedForeign();
         $check = $this->checkUserToken();
 
-        if(!empty($check))
+        if(!empty($check) || $authorizedForeign)
         {
             if(!empty($_POST['name']))
             {
@@ -330,7 +447,6 @@ class File extends Controller
                         header("Content-Transfer-Encoding: Binary");
                         header("Content-disposition: attachment; filename=\"" . basename($fullPath) . "\"");
                         readfile($fullPath);
-
                     }else
                     {
                         return $this->forbidden('itemDoesNotExist');
@@ -347,11 +463,31 @@ class File extends Controller
         }
     }
 
-    public function getStorageDevices()
+    public function downloadItem()
     {
+        if (empty($_POST['bitsky_ip']))
+        {
+            return $this->localDownloadItem();
+        } else
+        {
+            $url = htmlspecialchars($_POST['bitsky_ip']) . '/local_download_item';
+
+            $file = $this->callAPI(
+                'POST',
+                $url,
+                $_POST
+            );
+
+            return $file;
+        }
+    }
+
+    public function localGetStorageDevices()
+    {
+        $authorizedForeign = $this->isAuthorizedForeign();
         $check = $this->checkUserToken();
 
-        if(!empty($check))
+        if(!empty($check) || $authorizedForeign)
         {
             $devices = [];
             $letters = ['a', 'b', 'c', 'd'];
@@ -385,6 +521,25 @@ class File extends Controller
         {
             LogManager::store('[POST] Tentative de récupération d\'un appareil de stockage avec un token invalide (ID utilisateur: '.$check['uniq_id'].')', 2);
             return $this->forbidden('invalidToken');
+        }
+    }
+
+    public function getStorageDevices()
+    {
+        if (empty($_POST['bitsky_ip']))
+        {
+            return $this->localGetStorageDevices();
+        } else
+        {
+            $url = htmlspecialchars($_POST['bitsky_ip']) . '/local_get_devices';
+
+            $file = $this->callAPI(
+                'POST',
+                $url,
+                $_POST
+            );
+
+            return $file;
         }
     }
 }

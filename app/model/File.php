@@ -10,6 +10,7 @@ class File extends Model
     protected $table = 'files';
     protected $fillable = [
         'path',
-        'owner'
+        'owner',
+        'link_id'
     ];
 }

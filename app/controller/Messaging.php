@@ -5,6 +5,7 @@ use \Kernel\LogManager;
 use Model\Conversation;
 use Model\User;
 use Model\Message;
+use Controller\User as UserController;
 
 class Messaging extends Controller
 {
@@ -27,6 +28,19 @@ class Messaging extends Controller
                 $firstUser = User::find($firstUserID);
                 $secondUser = User::find($secondUserID);
 
+                $bitskyIp = (!empty($_POST['bitsky_ip'])) ? $_POST['bitsky_ip'] : null;
+
+                if($bitskyIp && empty($secondUser)) {
+                    $userController = new UserController();
+
+                    $_POST['uniq_id'] = $check['uniq_id'];
+                    $_POST['bitsky_ip'] = $bitskyIp;
+                    $_POST['user_id'] = $secondUserID;
+
+                    $secondUser = json_decode($userController->strangerGetById(), true);
+                    $secondUser = $secondUser['user'];
+                }
+
                 $conversation = Conversation::where(function ($query) use ($firstUser) {
                     $query->where('first_user_uniq_id', $firstUser['uniq_id'])
                           ->orWhere('second_user_uniq_id', $firstUser['uniq_id']);
@@ -35,12 +49,28 @@ class Messaging extends Controller
                           ->orWhere('second_user_uniq_id', $secondUser['uniq_id']);
                 })->first();
 
+                if($bitskyIp)
+                {
+                    // http://$bitskyIp/getConversation
+                }
+
                 if(empty($conversation))
                 {
+                    $linkId = null;
+
+                    if($bitskyIp)
+                    {
+                        $linkController = new Link();
+                        $key = json_decode($linkController->getKeyOfIp($bitskyIp), true);
+                        $key = $key['data'];
+                        $link = \Model\Link::where('bitsky_key', $key)->first();
+                        $linkId = $link->id;
+                    }
+
                     $conversation = Conversation::create([
                         'first_user_uniq_id' => $firstUser['uniq_id'],
                         'second_user_uniq_id' => $secondUser['uniq_id'],
-                        'link_id' => null
+                        'link_id' => $linkId
                     ]);
                 }
 

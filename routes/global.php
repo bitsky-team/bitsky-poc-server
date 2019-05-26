@@ -86,7 +86,6 @@ return [
     [   'POST',      '/local_get_devices',                  'file',          'localGetStorageDevices'       ],
     [   'POST',      '/get_devices_memory',                 'hardware',      'getStorageDevicesMemory'      ],
     [   'POST',      '/create_conversation',                'messaging',     'createConversation'           ],
-    [   'POST',      '/create_conversation',                'messaging',     'createConversation'           ],
     [   'POST',      '/check_conversation_exists',          'messaging',     'checkConversationExists'      ],
     [   'POST',      '/get_conversation',                   'messaging',     'getConversation'              ],
     [   'POST',      '/get_conversation_by_id',             'messaging',     'getConversationByID'          ],

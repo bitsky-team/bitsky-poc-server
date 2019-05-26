@@ -65,12 +65,9 @@ class User extends Controller
                     $user = UserModel::where('id', $userId)->first();
 
                     if($user != null) {
-
                         unset($user['password']);
                         return json_encode(['success' => true, 'user' => $user]);
-
                     }else {
-
                         return $this->forbidden('notFound');
                     }
                 } else {

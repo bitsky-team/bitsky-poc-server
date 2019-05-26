@@ -49,13 +49,15 @@ class User extends Controller
 
     public function getById()
     {
-        if (!empty($_POST['token']) && !empty($_POST['uniq_id'])) {
-            $token = htmlspecialchars($_POST['token']);
-            $uniq_id = htmlspecialchars($_POST['uniq_id']);
+        $authorizedForeign = $this->isAuthorizedForeign();
+
+        if ((!empty($_POST['token']) && !empty($_POST['uniq_id'])) || $authorizedForeign) {
+            $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
+            $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'linkedDevice';
 
             $verify = json_decode($this->authService->verify($token, $uniq_id));
 
-            if ($verify->success) {
+            if ($verify->success || $authorizedForeign) {
 
                 if(!empty($_POST['user_id'])) {
                     $userId = htmlspecialchars($_POST['user_id']);
@@ -63,13 +65,14 @@ class User extends Controller
                     $user = UserModel::where('id', $userId)->first();
 
                     if($user != null) {
-
+                        unset($user['password']);
                         return json_encode(['success' => true, 'user' => $user]);
-
                     }else {
-
                         return $this->forbidden('notFound');
                     }
+                } else {
+                    LogManager::store('[POST] Tentative de récupération d\'un utilisateur sans fournir son ID (ID utilisateur: ' . $uniq_id . ')', 2);
+                    return $this->forbidden('noID');
                 }
             } else 
             {
@@ -81,6 +84,270 @@ class User extends Controller
         }
     }
 
+    public function strangerGetById()
+    {
+        if(!empty($_POST['uniq_id']) && !empty($_POST['bitsky_ip']) && !empty($_POST['user_id']))
+        {
+            $uniq_id = htmlspecialchars($_POST['uniq_id']);
+            $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
+            $user_id = htmlspecialchars($_POST['user_id']);
+
+            $links = $this->callAPI(
+                'POST',
+                'https://bitsky.be/getActiveLinks',
+                [
+                    'bitsky_key' => getenv('LINKING_KEY')
+                ]
+            );
+
+            $links = json_decode($links, true);
+            $correctStranger = false;
+
+            if($links['success'])
+            {
+                foreach ($links['data'] as $link)
+                {
+                   if($bitsky_ip == $link['foreign_ip'])
+                   {
+                       $correctStranger = true;
+                   }
+                }
+
+                if($correctStranger)
+                {
+                    $response = $this->callAPI(
+                        'POST',
+                        'http://' . $link['foreign_ip'] . '/get_user',
+                        [
+                            'user_id' => $user_id
+                        ]
+                    );
+
+                    $response = json_decode($response, true);
+
+                    if($response['success'])
+                    {
+                        return json_encode(['success' => true, 'user' => $response['user']]);
+                    } else
+                    {
+                        $response['stranger'] = true;
+                        return json_encode($response);
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative de communication avec un bitsky non autorisé (ID utilisateur: ' . $uniq_id . ')', 2);
+                    return $this->forbidden('intermediaryNotReachable');
+                }
+            } else
+            {
+                LogManager::store('[POST] Impossible de récupérer les liaisons (ID utilisateur: ' . $uniq_id . ')', 2);
+                return $this->forbidden('intermediaryNotReachable');
+            }
+        } else
+        {
+            LogManager::store('[POST] Tentative de récupération de l\'utilisateur de liaison sans fournir les paramètres (ID utilisateur: ' . $_POST['uniq_id'] . ')', 2);
+            return $this->forbidden('noInfos');
+        }
+    }
+
+    public function localGetByUniqId()
+    {
+        $authorizedForeign = $this->isAuthorizedForeign();
+
+        if (!empty($_POST['token']) && !empty($_POST['uniq_id']) || $authorizedForeign)
+        {
+            $token = htmlspecialchars($_POST['token']);
+            $uniq_id = htmlspecialchars($_POST['uniq_id']);
+            $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+            if ($verify->success || $authorizedForeign)
+            {
+                if(!empty($_POST['user_uniq_id']))
+                {
+                    $userUniqId = htmlspecialchars($_POST['user_uniq_id']);
+                    $user = UserModel::where('uniq_id', $userUniqId)->first();
+
+                    if($user != null)
+                    {
+                        unset($user['password']);
+                        return json_encode(['success' => true, 'user' => $user]);
+                    }else
+                    {
+                        return $this->forbidden('notFound');
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative de récupération de l\'utilisateur sans fournir de uniq id (ID utilisateur: ' . $uniq_id . ')', 2);
+                    return $this->forbidden('noUniqId');
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération de l\'utilisateur avec un token invalide (ID utilisateur: ' . $uniq_id . ')', 2);
+                return $this->forbidden('invalidToken');
+            }
+        } else {
+            return $this->forbidden('noInfos');
+        }
+    }
+
+    public function getByUniqId()
+    {
+        if (!empty($_POST['user_uniq_id']))
+        {
+            if (empty($_POST['bitsky_ip']))
+            {
+                return $this->localGetByUniqId();
+            } else
+            {
+                $url = htmlspecialchars($_POST['bitsky_ip']) . '/get_local_user_by_uniq_id';
+
+                $user = $this->callAPI(
+                    'POST',
+                    $url,
+                    [
+                        'uniq_id' => null,
+                        'token' => null,
+                        'user_uniq_id' => $_POST['user_uniq_id'],
+                    ]
+                );
+
+                return $user;
+            }
+        } else
+        {
+            LogManager::store('[POST] Tentative de récupération de l\'utilisateur sans fournir de uniq id (ID utilisateur: ?)', 2);
+            return $this->forbidden('invalidUserId');
+        }
+    }
+
+    public function getFavoritesTrends()
+    {
+        $authorizedForeign = $this->isAuthorizedForeign();
+
+        if ((!empty($_POST['token']) && !empty($_POST['uniq_id'])) || $authorizedForeign) {
+            $token = !empty($_POST['token']) ? htmlspecialchars($_POST['token']) : false;
+            $uniq_id = !empty($_POST['uniq_id']) ? htmlspecialchars($_POST['uniq_id']) : 'linkedDevice';
+
+            $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+            if ($verify->success || $authorizedForeign) {
+
+                if(!empty($_POST['user_id'])) {
+                    $userId = htmlspecialchars($_POST['user_id']);
+
+                    $user = UserModel::where('id', $userId)->first();
+
+                    if($user != null) {
+                        $posts = PostModel::where('owner_uniq_id', $user->uniq_id)->get();
+                        $trendsCount = [];
+
+                        foreach($posts as $post)
+                        {
+                            $trendID = $post->tag_id;
+                            $alreadyInArray = false;
+
+                            foreach ($trendsCount as $key => $trendCount) {
+                                if($trendCount['id'] == $trendID) {
+                                    $alreadyInArray = true;
+                                    $trendCount['count'] = $trendCount['count'] + 1;
+                                }
+
+                                $trendsCount[$key] = $trendCount;
+                            }
+
+                            if(!$alreadyInArray) {
+                                array_push($trendsCount, ['id' => $trendID, 'count' => 1]);
+                            }
+                        }
+
+                        foreach($trendsCount as $key => $trendCount)
+                        {
+                            $tag = TagModel::where('id', $trendCount['id'])->first();
+                            $trendsCount[$key]['name'] = $tag->name;
+                        }
+
+                        return json_encode(['success' => true, 'favoritesTrends' => $trendsCount]);
+                    }else {
+
+                        return $this->forbidden('notFound');
+                    }
+                }
+            } else
+            {
+                LogManager::store('[POST] Tentative de récupération de l\'utilisateur avec un token invalide (ID utilisateur: ' . $uniq_id . ')', 2);
+                return $this->forbidden('invalidToken');
+            }
+        } else {
+            return $this->forbidden('noInfos');
+        }
+    }
+
+    public function strangerGetFavoritesTrends()
+    {
+        if(!empty($_POST['uniq_id']) && !empty($_POST['bitsky_ip']) && !empty($_POST['user_id']))
+        {
+            $uniq_id = htmlspecialchars($_POST['uniq_id']);
+            $bitsky_ip = htmlspecialchars($_POST['bitsky_ip']);
+            $user_id = htmlspecialchars($_POST['user_id']);
+
+            $links = $this->callAPI(
+                'POST',
+                'https://bitsky.be/getActiveLinks',
+                [
+                    'bitsky_key' => getenv('LINKING_KEY')
+                ]
+            );
+
+            $links = json_decode($links, true);
+            $correctStranger = false;
+
+            if($links['success'])
+            {
+                foreach ($links['data'] as $link)
+                {
+                    if($bitsky_ip == $link['foreign_ip'])
+                    {
+                        $correctStranger = true;
+                    }
+                }
+
+                if($correctStranger)
+                {
+                    $response = $this->callAPI(
+                        'POST',
+                        'http://' . $link['foreign_ip'] . '/get_favoritestrends',
+                        [
+                            'user_id' => $user_id
+                        ]
+                    );
+
+                    $response = json_decode($response, true);
+
+                    if($response['success'])
+                    {
+                        return json_encode(['success' => true, 'favoritesTrends' => $response['favoritesTrends']]);
+                    } else
+                    {
+                        $response['stranger'] = true;
+                        return json_encode($response);
+                    }
+                } else
+                {
+                    LogManager::store('[POST] Tentative de communication avec un bitsky non autorisé (ID utilisateur: ' . $uniq_id . ')', 2);
+                    return $this->forbidden('intermediaryNotReachable');
+                }
+            } else
+            {
+                LogManager::store('[POST] Impossible de récupérer les liaisons (ID utilisateur: ' . $uniq_id . ')', 2);
+                return $this->forbidden('intermediaryNotReachable');
+            }
+        } else
+        {
+            LogManager::store('[POST] Tentative de récupération de l\'utilisateur de liaison sans fournir les paramètres (ID utilisateur: ' . $_POST['uniq_id'] . ')', 2);
+            return $this->forbidden('noInfos');
+        }
+    }
+
     public function createOrUpdate()
     {
         $type = null; 
@@ -88,26 +355,25 @@ class User extends Controller
         if(!empty($_POST['type'])) $type = htmlspecialchars($_POST['type']);
 
         $notEmpty = !empty($_POST['token']) && !empty($_POST['uniq_id']) &&
-                                !empty($_POST['lastname']) && !empty($_POST['firstname']) &&
-                                !empty($_POST['email']) && !empty($_POST['rank']) &&
-                                (!empty($_POST['password']) || $type == 'UPDATE') && 
-                                (!empty($_POST['repeatPassword']) || $type == 'UPDATE') &&
-                                !empty($_POST['biography']) && !empty($_POST['sex']) &&
-                                !empty($_POST['job']) && !empty($_POST['birthdate']) &&
-                                !empty($_POST['birthplace']) && !empty($_POST['relationshipstatus']) &&
-                                !empty($_POST['livingplace']);
+                    !empty($_POST['lastname']) && !empty($_POST['firstname']) &&
+                    !empty($_POST['email']) && !empty($_POST['rank']) &&
+                    (!empty($_POST['password']) || $type == 'UPDATE') &&
+                    (!empty($_POST['repeatPassword']) || $type == 'UPDATE') &&
+                    !empty($_POST['biography']) && !empty($_POST['sex']) &&
+                    !empty($_POST['job']) && !empty($_POST['birthdate']) &&
+                    !empty($_POST['birthplace']) && !empty($_POST['relationshipstatus']) &&
+                    !empty($_POST['livingplace']);
 
         if($notEmpty) {
             if (!empty($_POST['token']) && !empty($_POST['uniq_id'])) {
                 $token = htmlspecialchars($_POST['token']);
                 $uniq_id = htmlspecialchars($_POST['uniq_id']);
-                $user = UserModel::where('uniq_id', $uniq_id)->first();
                 $verify = json_decode($this->authService->verify($token, $uniq_id));
 
                 if ($verify->success) {
                     $user = UserModel::where('uniq_id', $uniq_id)->first();
 
-                    if($user['rank'] == 2) {
+                    if($user['rank'] == 2 || ($type == 'UPDATE' && $user->id == htmlspecialchars($_POST['user_id']))) {
                         $received = [
                             "user_id" => (!empty($_POST['user_id']) ? htmlspecialchars($_POST['user_id']) : null),
                             "uniq_id" => md5(uniqid()),
@@ -125,7 +391,7 @@ class User extends Controller
                             "relationshipstatus" => htmlspecialchars(trim($_POST['relationshipstatus'])),
                             "livingplace" => htmlspecialchars(trim($_POST['livingplace'])),
                         ];
-    
+
                         $ranks = [1, 2];
     
                         $isLastnameOk = strlen($received['lastname']) >= 2;
@@ -152,8 +418,10 @@ class User extends Controller
                                 if($type == 'ADD') $user = new UserModel();
                                 else $user = UserModel::where('id', $received['user_id'])->first();
                                 
-                                $user->uniq_id = $received['uniq_id'];
+                                if($type == 'ADD') $user->uniq_id = $received['uniq_id'];
+
                                 $user->email = $received['email'];
+
                                 if($type == 'ADD' || ($type == 'UPDATE' &&  !empty($received['password']) && strlen($received['password']) >= 8))
                                 {
                                     $user->password = password_hash($received['password'], PASSWORD_BCRYPT);
@@ -203,7 +471,7 @@ class User extends Controller
 
     public function delete()
     {
-        if (!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['user_id'])) 
+        if (!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['user_id']))
         {
             $token = htmlspecialchars($_POST['token']);
             $uniq_id = htmlspecialchars($_POST['uniq_id']);
@@ -213,15 +481,15 @@ class User extends Controller
             if ($verify->success)
             {
                 $me = UserModel::where('uniq_id', $uniq_id)->first();
-                if($me['rank'] == 2)
+                $id = htmlspecialchars($_POST['user_id']);
+
+                if($me['rank'] == 2 || $me['id'] == $id)
                 {
-                    $id = htmlspecialchars($_POST['user_id']);
                     $user = UserModel::where('id', $id)->first();
                     $posts = PostModel::where('owner_uniq_id', $user['uniq_id']);
                     $postFavorites = PostFavoriteModel::where('user_uniq_id', $user['uniq_id']);
                     $postComments = PostCommentModel::where('owner_id', $user['uniq_id']);
                     $postCommentFavorites = PostCommentFavoriteModel::where('user_uniq_id', $user['uniq_id']);
-
                     if($user['rank'] == 2)
                     {
                         if($user['uniq_id'] == $me['uniq_id'])
@@ -251,11 +519,76 @@ class User extends Controller
         }
     }
 
+    public function deleteByUser()
+    {
+        if (!empty($_POST['token']) && !empty($_POST['uniq_id']) && !empty($_POST['user_id']) && !empty($_POST['password']))
+        {
+            $token = htmlspecialchars($_POST['token']);
+            $uniq_id = htmlspecialchars($_POST['uniq_id']);
+            $password = htmlspecialchars($_POST['password']);
+
+            $verify = json_decode($this->authService->verify($token, $uniq_id));
+
+            if ($verify->success)
+            {
+                $passwordCheckLength = strlen($password) >= 8;
+
+                if($passwordCheckLength)
+                {
+                    $me = UserModel::where('uniq_id', $uniq_id)->first();
+                    $id = htmlspecialchars($_POST['user_id']);
+
+                    if(password_verify($password, $me['password']))
+                    {
+                        if($me['rank'] == 2 || $me['id'] == $id)
+                        {
+                            $user = UserModel::where('id', $id)->first();
+                            $posts = PostModel::where('owner_uniq_id', $user['uniq_id']);
+                            $postFavorites = PostFavoriteModel::where('user_uniq_id', $user['uniq_id']);
+                            $postComments = PostCommentModel::where('owner_id', $user['uniq_id']);
+                            $postCommentFavorites = PostCommentFavoriteModel::where('user_uniq_id', $user['uniq_id']);
+                            if($user['rank'] == 2)
+                            {
+                                if($user['uniq_id'] == $me['uniq_id'])
+                                {
+                                    $this->deleteAllUserData($user, $posts, $postFavorites, $postComments, $postCommentFavorites);
+                                    return json_encode(['success' => true]);
+                                } else
+                                {
+                                    return $this->forbidden('cantDeleteAnAdmin');
+                                }
+                            } else
+                            {
+                                $this->deleteAllUserData($user, $posts, $postFavorites, $postComments, $postCommentFavorites);
+                                return json_encode(['success' => true]);
+                            }
+                        }else
+                        {
+                            return $this->forbidden('invalidRank');
+                        }
+                    }else
+                    {
+                        return $this->forbidden('incorrectPassword');
+                    }
+                }else
+                {
+                    return $this->forbidden('tooShortPassword');
+                }
+            }else
+            {
+                return $this->forbidden('invalidToken');
+            }
+        }else
+        {
+            return $this->forbidden('noInfos');
+        }
+    }
+
     public function deleteAllUserData($user, $posts, $postFavorites, $postComments, $postCommentFavorites) 
     {
         // Deleting user
         $user->delete();
-        
+
         // Deleting tags used by user's posts
         foreach($posts->get() as $post) 
         {

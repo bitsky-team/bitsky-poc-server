@@ -48,9 +48,15 @@
             $authController = new AuthController();
 
             // Preparing data
+            $user = null;
             $user = UserModel::where('email', 'tester.test@std.heh.be')->first();
-            $correctToken = $user['token'];
-            $incorrectToken = $user['token'] . 'incorrect';
+            $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
+            $user->token = 'token';
+            $user->token = password_hash($token, PASSWORD_BCRYPT);
+            $user->save();
+
+            $correctToken = $token;
+            $incorrectToken = $token . 'incorrect';
 
             $resultCorrect = $authController->verify($correctToken, $user['uniq_id']);
             $resultCorrect = json_decode($resultCorrect, true);
@@ -68,14 +74,17 @@
             $authController = new AuthController();
 
             $user = UserModel::where('email', 'tester.test@std.heh.be')->first();
+            $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
+            $user->token = password_hash($token, PASSWORD_BCRYPT);
+            $user->save();
 
             $received = [
                 "uniq_id"  =>  $user['uniq_id'], 
-                "token"  =>  $user['token'],  
+                "token"  =>  $token,
                 "avatar"  =>  'ABC',
-                "biography"  =>  'Occaecat fugiat commodo consectetur Lorem cupidatat nisi sit est et ullamco esse. Ex tempor aute nulla incididunt labore veniam reprehenderit laborum ullamco. Voluptate Lorem voluptate sint cillum ullamco. Ut anim cupidatat qui duis nulla anim id quis id ea irure ullamco. Qui Lorem ullamco non culpa sunt ipsum labore culpa labore excepteur cupidatat pariatur est. Nisi mollit veniam quis voluptate quis dolor dolore voluptate. Laboris ut irure ex eiusmod.',
+                "biography"  =>  'Cillum velit nostrud id eiusmod eiusmod nisi ut cillum esse occaecat Lorem cupidatat etdent.',
                 "sex" =>  'Homme',
-                "birthdate" =>  '12-12-2012',
+                "birthdate" =>  '1980-01-01',
                 "relationshipstatus" =>  'Célibataire',
                 "job" =>  'Testeur',
                 "birthplace" =>  'TestLand',
@@ -96,8 +105,11 @@
             $authController = new AuthController();
 
             $user = UserModel::where('email', 'tester.test@std.heh.be')->first();
+            $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsYXN0bmFtZSI6IlZhbiBNYWxkZXIiLCJmaXJzdG5hbWUiOiJKYXNvbiIsInJhbmsiOjIsImNyZWF0ZWRfYXQiOjE1NDk5MTY5MjksImxpZmV0aW1lIjo4NjQwMH0.KMlhLamtcegMWDgR4bs9tFIqo-bb9uXfd_JSWzSjXf8';
+            $user->token = password_hash($token, PASSWORD_BCRYPT);
+            $user->save();
 
-            $_POST['token'] = $user['token'];
+            $_POST['token'] = $token;
             $_POST['uniq_id'] = $user['uniq_id'];
 
             $result = $authController->getFirstTime();

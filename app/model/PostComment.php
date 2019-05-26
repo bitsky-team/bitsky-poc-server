@@ -11,6 +11,7 @@
         protected $fillable = [
             'owner_id',
             'post_id',
-            'content' 
+            'content',
+            'link_id'
         ];
     }

@@ -5,6 +5,7 @@
     use \Kernel\JWT;
     use \Model\User;
     use \Kernel\LogManager;
+    use \Model\User as UserModel;
 
     class Auth extends Controller
     {
@@ -30,13 +31,14 @@
                         
                         if(password_verify($received['password'], $user['password']))
                         {
+                            $token['id'] = $user['id'];
                             $token['lastname'] = $user['lastname'];
                             $token['firstname'] = $user['firstname'];
                             $token['rank'] = $user['rank'];
                             $token['created_at'] = time();
                             $token['lifetime'] = 86400;
                             $token = JWT::encode($token);
-                            $user->update(['token' => $token]);
+                            $user->update(['token' => password_hash($token, PASSWORD_BCRYPT)]);
 
                             return json_encode(['success' => true, 'message' => $token, 'uniq_id' => $user['uniq_id'], 'avatar' => $user['avatar']]);
                         }else
@@ -83,27 +85,27 @@
                         if($received['password'] == $received['repeatPassword'])
                         {
                             $id = $received['uniq_id'];
-                            unset($received['uniq_id']);
-                            unset($received['repeatPassword']);
                             $received['password'] = password_hash($received['password'], PASSWORD_BCRYPT);
                             $received['created_at'] = time();
-                            $received['lifetime'] = 86400;
-
-                            $password = $received['password'];
-                            $email = $received['email'];
                             $received['rank'] = 1;
-                            unset($received['password']);
-                            unset($received['email']);
-                            $auth_token = JWT::encode($received);
-
-                            $received['password'] = $password;
-                            $received['email'] = $email;
                             $received['uniq_id'] = $id;
-                            $received['token'] = $auth_token;
+                            $received['token'] = '';
+                            $received['avatar'] = '';
 
-                            User::create($received);
+                            $user = User::create($received);
 
-                            return json_encode(['success' => true, 'message' => $auth_token, 'uniq_id' => $id]);
+                            $authToken['id'] = $user['id'];
+                            $authToken['lastname'] = $user['lastname'];
+                            $authToken['firstname'] = $user['firstname'];
+                            $authToken['rank'] = $user['rank'];
+                            $authToken['created_at'] = time();
+                            $authToken['lifetime'] = 86400;
+                            $authToken = JWT::encode($authToken);
+
+                            $user->token = password_hash($authToken, PASSWORD_BCRYPT);
+                            $user->save();
+
+                            return json_encode(['success' => true, 'message' => $authToken, 'uniq_id' => $id]);
                         }else
                         {
                             return $this->forbidden('Les mots de passe ne sont pas identiques !');
@@ -140,31 +142,29 @@
                 $token = htmlspecialchars($_POST['token']);
                 $id = htmlspecialchars($_POST['id']);
 
-                if(count(User::where('token', $token)->get()) != 0)
-                {
-                    $user = User::where('token', $token)->first();
-                    
-                    if($user['uniq_id'] == $id)
-                    {
-                        $message = json_encode(JWT::check($token));
+                $checkTokenSignature = json_encode(JWT::check($token));
 
-                        if($message != '"invalid"')
-                        {
-                            return json_encode(['success' => true, 'message' => $message]);
-                        }else
-                        {
-                            LogManager::store('[AUTH] Détection d\'un token invalide. (ID utilisateur: '.$id.')', 2);
-                            return $this->forbidden($message);
-                        }
-                    }else
+                if($checkTokenSignature == '"invalid"')
+                {
+                    LogManager::store('[AUTH] Détection d\'un token invalide. (ID utilisateur: '.$id.')', 2);
+                    return $this->forbidden($checkTokenSignature);
+                }
+
+                if(count(User::where('uniq_id', $id)->get()) != 0)
+                {
+                    $user = User::where('uniq_id', $id)->first();
+
+                    if(password_verify($token, $user['token']))
                     {
-                        LogManager::store('[AUTH] L\'ID du client ('.$id.') ne correspond pas au propriétaire du token '.$user['uniq_id'].'.', 2);
-                        return $this->forbidden('invalidID');
+                        return json_encode(['success' => true, 'message' => $checkTokenSignature]);
                     }
+
+                    LogManager::store('[AUTH] Le token du client ('.$id.') ne correspond pas à celui de la DB de '.$user['uniq_id'].'.', 2);
+                    return $this->forbidden('"invalid"');
                 }else
                 {
-                    LogManager::store('[AUTH] Le token client ne correspond à aucun token serveur. (ID utilisateur: '.$id.')', 2);
-                    return $this->forbidden('unknownToken');
+                    LogManager::store('[AUTH] Le token client ne correspond à aucun uniq_id du serveur. (ID utilisateur: '.$id.')', 2);
+                    return $this->forbidden('unknownId');
                 }
             }else
             {
@@ -268,6 +268,44 @@
             }else
             {
                 return $this->forbidden('noInfos');
+            }
+        }
+
+        public function changePassword()
+        {
+            if (!empty($_POST['token']) && !empty($_POST['uniq_id'])) {
+                $token = htmlspecialchars($_POST['token']);
+                $uniq_id = htmlspecialchars($_POST['uniq_id']);
+
+                $verify = json_decode($this->verify($token, $uniq_id));
+
+                if ($verify->success) {
+                    if(!empty($_POST['actualPassword']) && !empty($_POST['newPassword']))
+                    {
+                        $actualPassword = htmlspecialchars($_POST['actualPassword']);
+                        $newPassword = htmlspecialchars($_POST['newPassword']);
+
+                        if(strlen($actualPassword) >= 8 && strlen($newPassword) >= 8) {
+                            $user = UserModel::where('uniq_id', $uniq_id)->first();
+
+                            if(password_verify($actualPassword, $user->password)) {
+                                $user->password = password_hash($newPassword, PASSWORD_BCRYPT);
+                                $user->save();
+                                return json_encode(['success' => true]);
+                            } else {
+                                return $this->forbidden('incorrectPassword');
+                            }
+                        } else {
+                            return $this->forbidden('invalidData');
+                        }
+                    } else {
+                        return $this->forbidden('emptyData');
+                    }
+                }else
+                {
+                    LogManager::store('[POST] Tentative de modification du mot de passe de l\'utilisateur avec un token invalide (ID utilisateur: ' . $uniq_id . ')', 2);
+                    return $this->forbidden('invalidToken');
+                }
             }
         }
     }
